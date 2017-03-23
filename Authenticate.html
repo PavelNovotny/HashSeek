@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>HashSeek :: Přihlášení</title>
+
+    <style type="text/css">
+        * { font-family: Arial; }
+        .login { position: relative; top: 100px; width: 380px; margin: 0 auto; }
+        .login form { margin: 0 auto; border: 1px solid #AAA; background: #f2f5ff; }
+        .login h4 { font-size: 16px; color: #666; }
+        .login table { margin: 25px 0; color: black; width: 100%; border-collapse: collapse; }
+        .login table input[type=text], .login table input[type=password] { width: 160px; font-size: 14px; padding: 5px 5px; }
+        .login table input[type=submit] { width: 80px; font-size: 13px; padding: 3px 5px; }
+        .login table td { color: black; font-size: 12px; font-weight: bold; width: 70px; padding-right: 5px; }
+        .login table tr td.td { text-align: right; }
+    </style>
+</head>
+<body>
+    <div class="login">
+        <h4>Dohledání v logu. Prosím autentikujte se.</h4>
+
+        <form action="hashSeek" method="post">
+            <table>
+                <tr>
+                    <td class="td"><label for="name">Jméno:</label></td>
+                    <td><input type="text" id="name" name="name" value=""></td>
+                </tr>
+                <tr>
+                    <td class="td"><label for="password">Heslo:</label></td>
+                    <td><input type="password" id="password" name="password" value=""></td>
+                </tr>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>
+                        <input type="hidden" name="session" value="">
+                        <input type="submit" value="Přihlásit"><br>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+</body>
+</html>

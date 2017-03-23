@@ -1,0 +1,77 @@
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/cip/!svn/ver/29469/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/util
+END
+HttpUtils.java
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/cip/!svn/ver/29469/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/util/HttpUtils.java
+END
+BinaryCodec.java
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/util/BinaryCodec.java
+END
+StringUtil.java
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/util/StringUtil.java
+END
+BlockDeflateListener.java
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/util/BlockDeflateListener.java
+END
+IOUtil.java
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/util/IOUtil.java
+END
+BlockCompressedStreamConstants.java
+K 25
+svn:wc:ra_dav:version-url
+V 129
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/util/BlockCompressedStreamConstants.java
+END
+RuntimeIOException.java
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/util/RuntimeIOException.java
+END
+BlockCompressedInputStream.java
+K 25
+svn:wc:ra_dav:version-url
+V 125
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/util/BlockCompressedInputStream.java
+END
+BlockCompressedOutputStream.java
+K 25
+svn:wc:ra_dav:version-url
+V 126
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/util/BlockCompressedOutputStream.java
+END
+RuntimeEOFException.java
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/util/RuntimeEOFException.java
+END
+BlockCompressedFilePointerUtil.java
+K 25
+svn:wc:ra_dav:version-url
+V 129
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/util/BlockCompressedFilePointerUtil.java
+END
+BlockGunzipper.java
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/util/BlockGunzipper.java
+END

@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/cip/!svn/ver/36806/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/blockseek/noelog
+END
+NoeBlockLogRecordFactory.java
+K 25
+svn:wc:ra_dav:version-url
+V 142
+/svn/cip/!svn/ver/36769/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/blockseek/noelog/NoeBlockLogRecordFactory.java
+END
+NoeSeekResults.java
+K 25
+svn:wc:ra_dav:version-url
+V 132
+/svn/cip/!svn/ver/36769/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/blockseek/noelog/NoeSeekResults.java
+END
+NoeBlockLogRecord.java
+K 25
+svn:wc:ra_dav:version-url
+V 135
+/svn/cip/!svn/ver/36806/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/blockseek/noelog/NoeBlockLogRecord.java
+END

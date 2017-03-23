@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/cip/!svn/ver/29469/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools
+END
+SAMException.java
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/SAMException.java
+END
+Defaults.java
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/Defaults.java
+END
+FileTruncatedException.java
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/FileTruncatedException.java
+END
+SAMFormatException.java
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/net/sf/samtools/SAMFormatException.java
+END

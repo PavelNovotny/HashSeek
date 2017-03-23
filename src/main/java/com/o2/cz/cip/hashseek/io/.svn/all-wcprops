@@ -1,0 +1,59 @@
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/cip/!svn/ver/30130/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/io
+END
+BgzIndexFileBlockDeflateListener.java
+K 25
+svn:wc:ra_dav:version-url
+V 136
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/io/BgzIndexFileBlockDeflateListener.java
+END
+BgzUtil.java
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/cip/!svn/ver/30130/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/io/BgzUtil.java
+END
+BlockHashReader.java
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/cip/!svn/ver/29480/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/io/BlockHashReader.java
+END
+RandomAccessFile.java
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svn/cip/!svn/ver/29507/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/io/RandomAccessFile.java
+END
+ReadOnlyFileChannel.java
+K 25
+svn:wc:ra_dav:version-url
+V 123
+/svn/cip/!svn/ver/29217/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/io/ReadOnlyFileChannel.java
+END
+SeekableInputStream.java
+K 25
+svn:wc:ra_dav:version-url
+V 123
+/svn/cip/!svn/ver/29588/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/io/SeekableInputStream.java
+END
+RandomSeekableInputStream.java
+K 25
+svn:wc:ra_dav:version-url
+V 129
+/svn/cip/!svn/ver/29588/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/io/RandomSeekableInputStream.java
+END
+BgzIndexFile.java
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/cip/!svn/ver/29469/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/io/BgzIndexFile.java
+END
+BgzSeekableInputStream.java
+K 25
+svn:wc:ra_dav:version-url
+V 126
+/svn/cip/!svn/ver/29588/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/io/BgzSeekableInputStream.java
+END

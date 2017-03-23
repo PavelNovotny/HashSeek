@@ -1,0 +1,337 @@
+<html>
+<head>
+	<title>HashSeek</title>
+	<meta http-equiv="content-type" content="text/html;charset=utf-8">
+	<style type="text/css">
+		h3 {
+			margin: 0;
+		}
+		.enabled {
+			color: blue;
+		}
+		.disabled {
+			color: #666;
+		}
+		.notfound {
+			color: #FC0202;
+		}
+		form {
+			background-color: #f2f5ff;
+			padding: 10px;
+		}
+		.word {
+			width: 100%;
+		}
+		td.sep {
+			width: 40px;
+			text-align: center;
+		}
+	</style>
+</head>
+
+<body>
+
+<h3>Dohledání v logu</h3>
+
+<p>
+Dohledání v logách CIPu, pouze celá slova a slova obsahující [-_.@]
+<br>
+Neomezený počet výskytů v rámci logu (výstup je omezen počtem 100 záznamů na soubor, pokud dojde k omezení je vidět ve výpisu), možnost použití AND podmínky (scope pro AND je beaId)
+
+<form action="hashSeek" method="post" onsubmit="updateCtrls('disabled')" accept-charset="utf-8">
+	<table border=0 cellspacing=0 style="width: 100%">
+		<tr>
+			<td align="right" style="width: 170px">Označení hledání:*</td>
+			<td><input type="text" name="defect" value="" title="Číslo defektu"></td>
+			<td align="right">Poslední ESB audit logy (bude pomalejší, pouze předprod a test)<input type="checkbox" name="onlineconnectesb"></td>
+		</tr>
+		<tr>
+			<td align="right">Datum od:*</td>
+			<td><input type="text" name="seekDay" value="" title="Den v měsíci (např. 18.01.2014)"></td>
+			<td align="right">B2B logy (pouze prod)<input type="checkbox" name="b2bseek"></td>
+		</tr>
+		<tr>
+			<td align="right">Počet dnů k prohledání:*</td>
+			<td>
+				<select name="daysToSeek" title="Počet dnů k prohledání">
+					<option value="1">+1 den</option>
+					<option value="2">+2 dny</option>
+					<option value="3">+3 dny</option>
+					<option value="4">+4 dny</option>
+					<option value="5">+5 dnů</option>
+					<option value="7">+7 dnů</option>
+					<option value="10">+10 dnů</option>
+					<option value="20">+20 dnů</option>
+					<option value="30">+30 dnů</option>
+					<option value="50">+50 dnů</option>
+					<option value="100">+100 dnů</option>
+				</select>
+			</td>
+			<td align="right">Time logy<input type="checkbox" name="includetimelogs"></td>
+		</tr>
+		<tr>
+			<td align="right">Prostředí:*</td>
+			<td>
+                <input type="checkbox" id="env_produkce" name="produkce"/><label for="env_produkce">Prod</label>
+                <input type="checkbox" id="env_predprod" name="predprod"><label for="env_predprod">Předprod</label>
+                <input type="checkbox" id="env_test" name="test"><label for="env_test">Test</label>
+			</td>
+			<td align="right">BPM audit logy<input type="checkbox" name="onlineconnectbpm"></td>
+		</tr>
+		<tr>
+			<td align="right">Celé slovo:*(</td>
+			<td colspan="2">
+				<table style="width: 100%" cellpadding="0" cellspacing="0">
+					<tr>
+						<td><input type="text" name="seekString0" value="" class="word"></td>
+						<td class="sep"> AND </td>
+						<td><input type="text" name="seekString1" value="" class="word"></td>
+						<td class="sep"> AND </td>
+						<td><input type="text" name="seekString2" value="" class="word"></td>
+                        <td class="sep">)</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td align="right">OR (</td>
+			<td colspan="2">
+				<table style="width: 100%" cellpadding="0" cellspacing="0">
+					<tr>
+						<td><input type="text" name="seekString3" value="" class="word"></td>
+						<td class="sep">AND</td>
+						<td><input type="text" name="seekString4" value="" class="word"></td>
+						<td class="sep">AND</td>
+						<td><input type="text" name="seekString5" value="" class="word"></td>
+                        <td class="sep">)</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td align="right">OR (</td>
+			<td colspan="2">
+				<table style="width: 100%" cellpadding="0" cellspacing="0">
+					<tr>
+						<td><input type="text" name="seekString6" value="" class="word"></td>
+						<td class="sep">AND</td>
+						<td><input type="text" name="seekString7" value="" class="word"></td>
+						<td class="sep">AND</td>
+						<td><input type="text" name="seekString8" value="" class="word"></td>
+                        <td class="sep">)</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+        <tr>
+            <td align="right">OR (</td>
+            <td colspan="2">
+                <table style="width: 100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td><input type="text" name="seekString9" value="" class="word"></td>
+                        <td class="sep">AND</td>
+                        <td><input type="text" name="seekString10" value="" class="word"></td>
+                        <td class="sep">AND</td>
+                        <td><input type="text" name="seekString11" value="" class="word"></td>
+                        <td class="sep">)</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td align="right">OR (</td>
+            <td colspan="2">
+                <table style="width: 100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td><input type="text" name="seekString12" value="" class="word"></td>
+                        <td class="sep">AND</td>
+                        <td><input type="text" name="seekString13" value="" class="word"></td>
+                        <td class="sep">AND</td>
+                        <td><input type="text" name="seekString14" value="" class="word"></td>
+                        <td class="sep">)</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td align="right"></td>
+            <td colspan="2" align="left">
+	    Dofiltrovat výsledky pomocí regulárních výrazů - musí být validní regex, pokud není, je to vidět ve výpisu. Pozor, bude pomalejší při větším datumovém rozsahu:
+            </td>
+        </tr>
+        <tr>
+            <td align="right">Regexp:</td>
+            <td colspan="2">
+                <table style="width: 100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td><input type="text" name="filterString0" value="" class="word"></td>
+                        <td class="sep">OR</td>
+                        <td><input type="text" name="filterString1" value="" class="word"></td>
+                        <td class="sep">OR</td>
+                        <td><input type="text" name="filterString2" value="" class="word"></td>
+                        <td class="sep"></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+		<tr>
+			<td align="right"></td>
+			<td colspan="2">
+                <table style="width: 100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td colspan="2">
+                            <input type="checkbox" name="csvseek"> CSV výstup (nepoužívat!)
+                        </td>
+                        <td align="left">Seek limit:</td>
+                        <td align="left"><input type="text" name="seekLimit" value="" class="word"/></td>
+                        <td class="sep"></td>
+                    </tr>
+                </table>
+			</td>
+		</tr>
+        <tr>
+            <td align="right">Csv služba 1:</td>
+            <td colspan="2">
+                <table style="width: 100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td><input type="text" name="csvService0" value="" class="word"></td>
+                        <td><input type="checkbox" name="csvRequest0">Q/S</td>
+                        <td class="sep">xpath</td>
+                        <td><input type="text" name="csvXpath00" value="" class="word"></td>
+                        <td class="sep">xpath</td>
+                        <td><input type="text" name="csvXpath01" value="" class="word"></td>
+                        <td class="sep"></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td align="right">Csv služba 2:</td>
+            <td colspan="2">
+                <table style="width: 100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td><input type="text" name="csvService1" value="" class="word"></td>
+                        <td><input type="checkbox" name="csvRequest0">Q/S</td>
+                        <td class="sep">xpath</td>
+                        <td><input type="text" name="csvXpath10" value="" class="word"></td>
+                        <td class="sep">xpath</td>
+                        <td><input type="text" name="csvXpath11" value="" class="word"></td>
+                        <td class="sep"></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td align="right">Csv služba 3:</td>
+            <td colspan="2">
+                <table style="width: 100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td><input type="text" name="csvService2" value="" class="word"></td>
+                        <td><input type="checkbox" name="csvRequest0">Q/S</td>
+                        <td class="sep">xpath</td>
+                        <td><input type="text" name="csvXpath20" value="" class="word"></td>
+                        <td class="sep">xpath</td>
+                        <td><input type="text" name="csvXpath21" value="" class="word"></td>
+                        <td class="sep"></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td align="right">namespace 1:</td>
+            <td colspan="2">
+                <table style="width: 100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td><input type="text" name="namespace0" value="" class="word"></td>
+                        <td class="sep">prefix:</td>
+                        <td><input type="text" name="nsPrefix0" value="" class="word"></td>
+                        <td class="sep"></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td align="right">namespace 2:</td>
+            <td colspan="2">
+                <table style="width: 100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td><input type="text" name="namespace1" value="" class="word"></td>
+                        <td class="sep">prefix:</td>
+                        <td><input type="text" name="nsPrefix1" value="" class="word"></td>
+                        <td class="sep"></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td align="right">namespace 3:</td>
+            <td colspan="2">
+                <table style="width: 100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td><input type="text" name="namespace2" value="" class="word"></td>
+                        <td class="sep">prefix:</td>
+                        <td><input type="text" name="nsPrefix2" value="" class="word"></td>
+                        <td class="sep"></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+	</table>
+	<input type="hidden" name="session" value="" />
+	<input type="submit" value="Vyhledat" />
+	<input type="button" value="RESET" onclick="resetWord()" />
+	<input type="button" value="Logy" onclick="window.open('logFilesInfo', '_blank');"/>
+</form>
+
+	<div style="margin-bottom: 10px">
+		<a href="result" target="_blank" name="ctrl" class="disabled">Výsledek</a> |
+		<a href="download" id="submitId" name="ctrl" class="disabled">Download výsledků</a>
+		<a href="sessions">Sessions</a>
+	</div>
+
+<iframe src="processCommand" scrolling="auto" height="50%" width="100%" id="processCommandId">
+	Vas prohlizec nepodporuje iframe...
+</iframe>
+
+<script type="text/javascript">
+	var iframe = document.getElementById('processCommandId');
+    function scroll_to_end() {
+        iframe.contentWindow.scrollTo(0, 10000);
+        window.scrollTo(0, 10000);
+    }
+
+	if (navigator.userAgent.indexOf("MSIE") > -1 && !window.opera) {
+		iframe.onreadystatechange = function () {
+			if (iframe.readyState == "complete") {
+				if (iframe.contentWindow.document.body.innerHTML.search("FOUND") != -1) {
+					updateCtrls('enabled')
+				} else {
+					updateCtrls('notfound')
+				}
+			}
+		};
+	} else {
+		iframe.onload = function () {
+			if (iframe.contentWindow.document.body.innerHTML.search("FOUND") != -1) {
+				updateCtrls('enabled')
+			} else {
+				updateCtrls('notfound')
+			}
+            scroll_to_end()
+		};
+	}
+	function updateCtrls(c) {
+		var ctrls = document.getElementsByName("ctrl")
+		for (var i=0; i<ctrls.length; i++) {
+			ctrls[i].className = c
+		}
+	}
+	function resetWord() {
+		var tmp = document.getElementsByClassName("word");
+		for (var i=0; i<tmp.length; i++) {
+			tmp[i].value = ""
+		}
+	}
+</script>
+</body>
+</html>

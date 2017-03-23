@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/cip/!svn/ver/38111/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/blockseek
+END
+BlockRecordFactory.java
+K 25
+svn:wc:ra_dav:version-url
+V 129
+/svn/cip/!svn/ver/29526/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/blockseek/BlockRecordFactory.java
+END
+XPathUtil.java
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svn/cip/!svn/ver/33558/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/blockseek/XPathUtil.java
+END
+SortInfo.java
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/cip/!svn/ver/29563/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/blockseek/SortInfo.java
+END
+AbstractBlockRecord.java
+K 25
+svn:wc:ra_dav:version-url
+V 130
+/svn/cip/!svn/ver/29571/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/blockseek/AbstractBlockRecord.java
+END
+AbstractSeekResults.java
+K 25
+svn:wc:ra_dav:version-url
+V 130
+/svn/cip/!svn/ver/37094/cip_modules/branches/HashSeek27504/src/main/java/com/o2/cz/cip/hashseek/blockseek/AbstractSeekResults.java
+END
