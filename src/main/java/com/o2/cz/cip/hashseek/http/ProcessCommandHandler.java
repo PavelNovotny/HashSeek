@@ -297,10 +297,11 @@ class ProcessCommandHandler implements HttpHandler, Runnable {
                 auditSeekResults.addDependentSeekResults(b2bSeekResults);
             }
             //remote seek přidán Vojkovo metodou
+            //TODO přidat lokální sekvenční hledání podle ListenerTest
             boolean append = false;
-            if (session.isOnlineEsbSeek()) {
+            if (session.isOnlineEsbSeek()) { //todo tohle je lokální
                 Set<String> missedLastFiles = FileEvaluatorUtil.missedLastFiles(appArguments, new HashSet<File>(auditFilesToSeek), "", auditFileEvaluator);
-                remoteSeek(stringsToSeek, missedLastFiles, appArguments, output, session);
+                localSeqSeek(stringsToSeek, missedLastFiles, appArguments, output, session);
                 append = true;
             }
             auditSeekResults.runSeek(stringsToSeek, filter, output); //spustí i ostatní dependent
@@ -319,6 +320,10 @@ class ProcessCommandHandler implements HttpHandler, Runnable {
             noeSeekResults.reportSortedResults(new File(session.getFileName()), output,session,appArguments, false);
         }
         output.println(String.format("FINISHED in %s.", HashSeekConstants.formatedTimeMillis(System.currentTimeMillis() - start)));
+    }
+
+    private void localSeqSeek(List<List<String>> seekStrings, Set<String> missedFiles, AppArguments appArguments, PrintStream output, Session session)  {
+
     }
 
     private void remoteSeek(List<List<String>> seekStrings, Set<String> missedFiles, AppArguments appArguments, PrintStream output, Session session) throws ClassNotFoundException, IOException {

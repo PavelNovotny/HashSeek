@@ -41,14 +41,20 @@ Neomezený počet výskytů v rámci logu (výstup je omezen počtem 100 záznam
 <form action="hashSeek" method="post" onsubmit="updateCtrls('disabled')" accept-charset="utf-8">
 	<table border=0 cellspacing=0 style="width: 100%">
 		<tr>
+			<td align="right"></td>
+			<td></td>
+			<td align="right">NOE logy<input type="checkbox" name="noeseek"></td>
+		</tr>
+		<tr>
 			<td align="right" style="width: 170px">Označení hledání:*</td>
 			<td><input type="text" name="defect" value="" title="Číslo defektu"></td>
-			<td align="right">Poslední ESB audit logy (bude pomalejší, pouze předprod a test)<input type="checkbox" name="onlineconnectesb"></td>
+			<td align="right">Poslední ESB audit logy (hledání bude pomalejší, pouze předprod a test)<input type="checkbox" name="onlineconnectesb"></td>
+
 		</tr>
 		<tr>
 			<td align="right">Datum od:*</td>
 			<td><input type="text" name="seekDay" value="" title="Den v měsíci (např. 18.01.2014)"></td>
-			<td align="right">B2B logy (pouze prod)<input type="checkbox" name="b2bseek"></td>
+			<td align="right">B2B logy<input type="checkbox" name="b2bseek"></td>
 		</tr>
 		<tr>
 			<td align="right">Počet dnů k prohledání:*</td>
@@ -211,7 +217,7 @@ Neomezený počet výskytů v rámci logu (výstup je omezen počtem 100 záznam
                 <table style="width: 100%" cellpadding="0" cellspacing="0">
                     <tr>
                         <td><input type="text" name="csvService1" value="" class="word"></td>
-                        <td><input type="checkbox" name="csvRequest0">Q/S</td>
+                        <td><input type="checkbox" name="csvRequest1">Q/S</td>
                         <td class="sep">xpath</td>
                         <td><input type="text" name="csvXpath10" value="" class="word"></td>
                         <td class="sep">xpath</td>
@@ -227,7 +233,7 @@ Neomezený počet výskytů v rámci logu (výstup je omezen počtem 100 záznam
                 <table style="width: 100%" cellpadding="0" cellspacing="0">
                     <tr>
                         <td><input type="text" name="csvService2" value="" class="word"></td>
-                        <td><input type="checkbox" name="csvRequest0">Q/S</td>
+                        <td><input type="checkbox" name="csvRequest2">Q/S</td>
                         <td class="sep">xpath</td>
                         <td><input type="text" name="csvXpath20" value="" class="word"></td>
                         <td class="sep">xpath</td>
