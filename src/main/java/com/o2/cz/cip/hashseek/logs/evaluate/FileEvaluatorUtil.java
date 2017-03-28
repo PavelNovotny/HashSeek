@@ -81,13 +81,25 @@ public class FileEvaluatorUtil {
         return  missedFiles;
     }
 
-    private static void filterNonIndexed(Set<String> folders, Set<String> bgzFolders, Set<File> allNonIndexedFiles, Set<File> nonIndexedFiles) {
-        for (String folder : folders) {
+    private static void filterNonIndexed(String env, int size, Set<File> allNonIndexedFiles, Set<File> nonIndexedFiles) {
+        Calendar current = Calendar.getInstance();
+        final String today = HashSeekConstants.dateString(current);
+        for (int i = 1;i <= size; i++) {
+            String bgzFolder = AppProperties.getValue(env + ".logLocation."+i);
+            String folder = AppProperties.getValue(env + ".transferLocation."+i);
+            if (folder == null) {
+                HashSeekConstants.outPrintLine(String.format("folder '%s'. Please check in '%s'", folder, AppProperties.HASH_SEEK_PROPERTIES));
+                continue;
+            }
+            if (bgzFolder == null) {
+                HashSeekConstants.outPrintLine(String.format("bgzFolder '%s'. Please check in '%s'", bgzFolder, AppProperties.HASH_SEEK_PROPERTIES));
+                continue;
+            }
             File dir = new File(folder);
             if (dir.isDirectory()) {
                 File[] files = dir.listFiles(new FilenameFilter() {
                     public boolean accept(File file, String name) {
-                        if (name.matches("^(other|jms).*\\.\\d\\d$") || name.endsWith(".audit")) {
+                        if (name.matches("^(other|jms).*"+today+"\\.\\d\\d$") || name.endsWith(".audit")) {
                             return true;
                         }
                         return false;
@@ -97,12 +109,11 @@ public class FileEvaluatorUtil {
                 nonIndexedFiles.addAll(Arrays.asList(files));
             } else {
                 HashSeekConstants.outPrintLine(String.format("'%s' is NOT directory. Please check in '%s'", dir, AppProperties.HASH_SEEK_PROPERTIES));
+                continue;
             }
-        }
-        for (String folder : bgzFolders) {
-            File dir = new File(folder);
-            if (dir.isDirectory()) {
-                File[] files = dir.listFiles(new FilenameFilter() {
+            File bgzDir = new File(bgzFolder);
+            if (bgzDir.isDirectory()) {
+                File[] files = bgzDir.listFiles(new FilenameFilter() {
                     public boolean accept(File file, String name) {
                         if (name.matches(".*.\\d\\d\\.bgz$")) {
                             return true;
@@ -112,13 +123,14 @@ public class FileEvaluatorUtil {
                 });
                 for (File bgzFile : files) {
                     for (File file : allNonIndexedFiles) {
-                        if (bgzFile.getPath().contains(file.getPath())) {
+                        if (bgzFile.getPath().contains(file.getName())) {
                             nonIndexedFiles.remove(file);
                         }
                     }
                 }
             } else {
                 HashSeekConstants.outPrintLine(String.format("'%s' is NOT directory. Please check in '%s'", dir, AppProperties.HASH_SEEK_PROPERTIES));
+                continue;
             }
         }
     }
@@ -127,19 +139,14 @@ public class FileEvaluatorUtil {
         final Set<File> nonIndexedFiles = new HashSet<File>();
         final Set<File> allIndexedFiles = new HashSet<File>();
         if (appArguments.isSeekProd()) {
-            Set<String> bgzFolders = AppProperties.filteredProperties("prod.logLocation");
-            Set<String> folders = AppProperties.filteredProperties("prod.transferLocation");
-            filterNonIndexed(folders, bgzFolders, allIndexedFiles, nonIndexedFiles);
-        }
-        if (appArguments.isSeekPredprod()) {
-            Set<String> bgzFolders = AppProperties.filteredProperties("predprod.logLocation");
-            Set<String> folders = AppProperties.filteredProperties("predprod.transferLocation");
-            filterNonIndexed(folders, bgzFolders, allIndexedFiles, nonIndexedFiles);
-        }
-        if (appArguments.isSeekTest()) {
-            Set<String> bgzFolders = AppProperties.filteredProperties("test.logLocation");
-            Set<String> folders = AppProperties.filteredProperties("test.transferLocation");
-            filterNonIndexed(folders, bgzFolders, allIndexedFiles, nonIndexedFiles);
+            int size = AppProperties.filteredProperties("prod.logLocation").size();
+            filterNonIndexed("prod", size, allIndexedFiles, nonIndexedFiles);
+        } else if (appArguments.isSeekPredprod()) {
+            int size = AppProperties.filteredProperties("predprod.logLocation").size();
+            filterNonIndexed("predprod", size, allIndexedFiles, nonIndexedFiles);
+        } else if (appArguments.isSeekTest()) {
+            int size = AppProperties.filteredProperties("test.logLocation").size();
+            filterNonIndexed("test", size, allIndexedFiles, nonIndexedFiles);
         }
         return nonIndexedFiles;
     }
