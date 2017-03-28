@@ -87,7 +87,7 @@ public class FileEvaluatorUtil {
             if (dir.isDirectory()) {
                 File[] files = dir.listFiles(new FilenameFilter() {
                     public boolean accept(File file, String name) {
-                        if (name.matches(".*\\.\\d\\d$") || name.endsWith(".audit")) {
+                        if (name.matches("^(other|jms).*\\.\\d\\d$") || name.endsWith(".audit")) {
                             return true;
                         }
                         return false;
