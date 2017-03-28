@@ -66,7 +66,38 @@ public class HashSeekAuditLog extends AbstractLogSeek{
         reportMissedFiles(missedFiles);
         localSeek(seekStrings, filesToProcess, missedLastFiles);
         if (appArguments.isOnlineEsbSeek()) {
-            remoteSeek(seekStrings, missedLastFiles, appArguments);
+            //remoteSeek(seekStrings, missedLastFiles, appArguments);
+            seqSeek(seekStrings, missedLastFiles, appArguments);
+        }
+    }
+
+    private void seqSeek(String[] seekStrings, Set<String> missedFiles, AppArguments appArguments) throws ClassNotFoundException, IOException {
+        HashSeekConstants.outPrintLine(output, String.format("Sekvenční hledání:"));
+        //todo, tohle se vůbec nepoužívá, smazat.
+        for (String fileName : missedFiles) {
+            HashSeekConstants.outPrintLine(output, String.format("File : %s", fileName));
+        }
+        //if (found) {
+        //    this.getResults().addAll(logRecords);
+        //    setFound(true);
+        //}
+    }
+
+    private void remoteSeek(String[] seekStrings, Set<String> missedFiles, AppArguments appArguments) throws ClassNotFoundException, IOException {
+        HashSeekConstants.outPrintLine(output, String.format("Budou se prohledavat soubory na vzdalenych strojich:"));
+        Set<SingleRemoteSeek> singleRemoteSeeks = new HashSet<SingleRemoteSeek>();
+        for (String fileName : missedFiles) {
+            singleRemoteSeeks.addAll(prepareRemoteSeeks(seekStrings, fileName, appArguments));
+        }
+        for (SingleRemoteSeek singleRemoteSeek : singleRemoteSeeks) {
+            HashSeekConstants.outPrintLine(output, String.format("%s:%s <<<- '%s'", singleRemoteSeek.getHost(), singleRemoteSeek.getPort(), singleRemoteSeek.getRemoteMessage().getSeekParameters().getClientFileToSeek()));
+        }
+        for (SingleRemoteSeek singleRemoteSeek : singleRemoteSeeks) {
+            Set<LogRecordAuditLog> logRecords = singleRemoteSeek.remoteSeekByClientFileName(output);
+            if (logRecords != null) {
+                this.getResults().addAll(logRecords);
+                setFound(true);
+            }
         }
     }
 
@@ -89,33 +120,18 @@ public class HashSeekAuditLog extends AbstractLogSeek{
     }
 
 
-
-    private void remoteSeek(String[] seekStrings, Set<String> missedFiles, AppArguments appArguments) throws ClassNotFoundException, IOException {
-        HashSeekConstants.outPrintLine(output, String.format("Budou se prohledavat soubory na vzdalenych strojich:"));
-        Set<SingleRemoteSeek> singleRemoteSeeks = new HashSet<SingleRemoteSeek>();
-        for (String fileName : missedFiles) {
-            singleRemoteSeeks.addAll(prepareRemoteSeeks(seekStrings, fileName, appArguments));
-        }
-        for (SingleRemoteSeek singleRemoteSeek : singleRemoteSeeks) {
-            HashSeekConstants.outPrintLine(output, String.format("%s:%s <<<- '%s'", singleRemoteSeek.getHost(), singleRemoteSeek.getPort(), singleRemoteSeek.getRemoteMessage().getSeekParameters().getClientFileToSeek()));
-        }
-        for (SingleRemoteSeek singleRemoteSeek : singleRemoteSeeks) {
-            Set<LogRecordAuditLog> logRecords = singleRemoteSeek.remoteSeekByClientFileName(output);
-            if (logRecords != null) {
-                this.getResults().addAll(logRecords);
-                setFound(true);
-            }
-        }
-    }
-
-    @Override
-    public void reportSortedResults(File report,AppArguments appArguments) throws IOException {
+    public void reportSortedResults(File report,AppArguments appArguments, PrintStream messageOutput) throws IOException {
         if (report.exists()) {
             report.delete();
         }
         PrintStream out = new PrintStream(report,"UTF-8");
         LogRecordAuditLog.sortBy = LogRecordAuditLog.SortBy.BEAID_LINE;
         List<AbstractLogRecord> sortedResults = new ArrayList<AbstractLogRecord>(results);
+        if (results.size()>0) {
+            messageOutput.println("FOUND");
+        }else{
+            messageOutput.println("NOT found");
+        }
         Collections.sort(sortedResults);
         AbstractLogRecord previousLogRecord=createInstanceOfLogRecord(); ;
         String beaIdEnterTime = "unknown";
@@ -131,7 +147,6 @@ public class HashSeekAuditLog extends AbstractLogSeek{
         if (previousLogRecord!=null){
             previousLogRecord.setLastInBeaId(true);
         }
-
         LogRecordAuditLog.sortBy = LogRecordAuditLog.SortBy.ENTRYTIME_BEAID_LINE;
         Collections.sort(sortedResults);
         for (AbstractLogRecord logRecord : sortedResults) {
