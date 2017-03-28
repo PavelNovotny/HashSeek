@@ -62,6 +62,8 @@ public abstract class AbstractLogRecord implements Comparable<AbstractLogRecord>
                 domain = domain + "m";
             } else if (logFile.getPath().contains("e2e")) { //E2E
                 domain = domain + "e";
+            } else if (logFile.getPath().contains("datamig")) {
+                domain = domain + "d";
             }
             this.markerPrefix = domain + matcher.group().substring(matcher.group().length()-1);
         } else {
