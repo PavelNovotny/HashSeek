@@ -3,10 +3,6 @@ package com.o2.cz.cip.hashseek.core;
 import com.o2.cz.cip.hashseek.app.AppProperties;
 import com.o2.cz.cip.hashseek.io.*;
 import com.o2.cz.cip.hashseek.io.RandomAccessFile;
-import com.o2.cz.cip.hashseek.logs.auditlog.AuditLogTransformer;
-import com.o2.cz.cip.hashseek.logs.bpmlog.BpmLogTransformer;
-import com.o2.cz.cip.hashseek.logs.noelog.NoeLogTransformer;
-import com.o2.cz.cip.hashseek.logs.timelog.TimeLogTransformer;
 import com.o2.cz.cip.hashseek.util.BlockSeekUtil;
 import org.apache.log4j.Logger;
 
@@ -17,7 +13,7 @@ import java.util.*;
  * User: Pavel
  * Date: 20.3.13 10:52
  */
-public class BlockHashFileCreator extends AbstractHashFileCreator {
+public class BlockHashFileCreator {
 
     public static final int SORT_BUFFER_SIZE_IN_BYTES = 512*1024*1024; //0,5 GB
     public static final int CUSTOM_BLOCKS_KIND = 1;
@@ -30,12 +26,10 @@ public class BlockHashFileCreator extends AbstractHashFileCreator {
     private int fileCounter;
     private static final int INT_SIZE = Integer.SIZE / Byte.SIZE;
     private static final int LONG_SIZE = Long.SIZE / Byte.SIZE;
-    public static final int MAX_HASH_SPACE = SORT_BUFFER_SIZE_IN_BYTES / INT_SIZE / LONG_SIZE;
     private String tempPlace = "./hash/";
     private String hashRawFileName = "hashRaw.hash";
     private String blockSuffix = HashSeekConstants.BLOCKS_FILE_SUFFIX;
     private String hashSuffix = ".hash_v1";
-    private String tempHashPositionsAndCountsFileName = "hashPositionsAndCounts.temp";
     private static Logger LOGGER = Logger.getLogger(BlockHashFileCreator.class);
 
     public void resetFileCounter() {
@@ -92,16 +86,7 @@ public class BlockHashFileCreator extends AbstractHashFileCreator {
         return hashSpaceSize;
     }
 
-    @Override
-    void registerTransformers() {
-      transformers.add(new BpmLogTransformer());
-      transformers.add(new AuditLogTransformer());
-      transformers.add(new TimeLogTransformer());
-      transformers.add(new NoeLogTransformer());
-    }
-
-    @Override
-    public void createHashFileInner(File fileToHash) throws Exception {
+    public void createHashFile(File fileToHash) throws Exception {
         LOGGER.debug(String.format("started indexing '%s'.", fileToHash.getPath()));
         BlockHashReader bhr;
         allocateFileBuffer();
@@ -188,8 +173,6 @@ public class BlockHashFileCreator extends AbstractHashFileCreator {
         System.out.println(String.format("final hash space size %s", spaceSize));
         return newSpaceSize;
     }
-
-
 
     private void writeFinalHashFile(File fileToHash, int hashSpace) throws IOException {
         //RandomAccessFile hashRawSortedFile = new RandomAccessFile(new File(String.format("%s/%s%s",tempPlace, hashRawFileName, sortedSuffix)),"r");
@@ -329,7 +312,6 @@ public class BlockHashFileCreator extends AbstractHashFileCreator {
         BlockHashFileCreator blockHashFileCreator = new BlockHashFileCreator();
         blockHashFileCreator.createHashFile(new File(args[0]));
     }
-
 
 }
 

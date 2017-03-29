@@ -1,8 +1,9 @@
 package com.o2.cz.cip.hashseek.schedule;
 
 import com.o2.cz.cip.hashseek.app.AppProperties;
-import com.o2.cz.cip.hashseek.core.HashFileCreatorFactory;
+import com.o2.cz.cip.hashseek.core.BlockHashFileCreator;
 import com.o2.cz.cip.hashseek.core.HashSeekConstants;
+import com.o2.cz.cip.hashseek.core.TransformAndIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +23,6 @@ public class IndexScheduler implements Runnable {
     private static final int FILE_NEW = 0;
     private static final int FILE_CHANGED = 1;
     private static final int FILE_PASSED_CHECK = 2;
-    private String indexClass= HashFileCreatorFactory.class.getName();
     Map<File, Long> fileChangeTimes = new HashMap<File, Long>();
 
     public IndexScheduler(String[] args) {
@@ -36,7 +36,7 @@ public class IndexScheduler implements Runnable {
     public void run() {
         while(true) {
             HashSeekConstants.outPrintLine("looked for files to index");
-            indexFiles(indexClass);
+            indexFiles(TransformAndIndex.class.getName());
             try {
                 Thread.sleep(SLEEP_TIME);
             } catch (InterruptedException e) {

@@ -1,7 +1,6 @@
 package com.o2.cz.cip.hashseek.tests;
 
 import com.o2.cz.cip.hashseek.app.AppArguments;
-import com.o2.cz.cip.hashseek.core.HashFileCreator;
 import com.o2.cz.cip.hashseek.logs.auditlog.HashSeekAuditLog;
 import com.o2.cz.cip.hashseek.core.HashSeekConstants;
 import com.o2.cz.cip.hashseek.core.SingleFileHashSeek;
@@ -180,8 +179,7 @@ public class HashTest {
     }
 
     private void testHashCreate() throws IOException {
-        HashFileCreator hashCreator = new HashFileCreator();
-        hashCreator.createHashFileInner(new File("d:\\_svnko\\cip_modules\\branches\\HashSeek27504\\logs\\test\\other_s2_alsb_aspect.audit.20140218"));
+        //test blockhashfilecreator
     }
 
     private void report(SingleFileHashSeek singleFileHashSeek) throws IOException {
@@ -227,8 +225,8 @@ public class HashTest {
 //        File file = new File("c:\\download\\analyzeLog\\logs\\pokus.txt");
 //        File file = new File("c:\\download\\analyzeLog\\logs\\TestHash.txt");
         HashSeekConstants.outPrintLine("started testCreateIndex");
-        HashFileCreator hashCreator = new HashFileCreator();
-        hashCreator.createHashFileInner(file);
+//        HashFileCreator hashCreator = new HashFileCreator();
+//        hashCreator.createHashFileInner(file);
         HashSeekConstants.outPrintLine("ended testCreateIndex");
     }
 
