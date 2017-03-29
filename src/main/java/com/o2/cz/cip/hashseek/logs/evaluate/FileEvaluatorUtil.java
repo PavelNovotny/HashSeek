@@ -123,7 +123,7 @@ public class FileEvaluatorUtil {
                 });
                 for (File bgzFile : files) {
                     for (File file : allNonIndexedFiles) {
-                        if (bgzFile.getPath().contains(file.getName())) {
+                        if (bgzFile.getPath().contains(file.getName()) && !file.getName().endsWith(".audit")) {
                             nonIndexedFiles.remove(file);
                         }
                     }
