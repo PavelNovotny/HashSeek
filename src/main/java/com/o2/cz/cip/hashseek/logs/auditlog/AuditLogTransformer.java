@@ -161,9 +161,6 @@ public class AuditLogTransformer extends AbstractLogTransformer{
             CloseUtil.close(inChannel);
             CloseUtil.close(aFile);
         }
-
-
-
         //tridim beaId
         boolean distinct=false;
         int headersize=0;

@@ -4,11 +4,8 @@ import com.o2.cz.cip.hashseek.app.AppArguments;
 import com.o2.cz.cip.hashseek.io.RandomSeekableInputStream;
 import com.o2.cz.cip.hashseek.io.SeekableInputStream;
 import com.o2.cz.cip.hashseek.logs.AbstractLogRecord;
-import com.o2.cz.cip.hashseek.logs.AbstractLogSeek;
 import com.o2.cz.cip.hashseek.logs.auditlog.HashSeekAuditLog;
 import com.o2.cz.cip.hashseek.logs.auditlog.LogRecordAuditLog;
-import com.o2.cz.cip.hashseek.remote.RemoteMessage;
-import com.o2.cz.cip.hashseek.remote.RemoteSeekParameters;
 
 import java.io.File;
 import java.util.HashSet;

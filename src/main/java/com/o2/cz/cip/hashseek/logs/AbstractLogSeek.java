@@ -186,8 +186,6 @@ public abstract class AbstractLogSeek  implements FileEvaluator {
                 break;
             }
         }
-
-
         String line = (new String(bytesToRead,"UTF-8")).concat(prevChunk);
         Matcher matcher = dateStartLinePattern.matcher(line);
         int offset = -1;

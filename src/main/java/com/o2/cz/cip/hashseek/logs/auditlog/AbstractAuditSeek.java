@@ -70,8 +70,6 @@ public abstract class AbstractAuditSeek {
                 break;
             }
         }
-
-
         String line = (new String(bytesToRead,"UTF-8")).concat(prevChunk);
         Matcher matcher = dateStartLinePattern.matcher(line);
         int offset = -1;
@@ -94,98 +92,6 @@ public abstract class AbstractAuditSeek {
         }
     }
 
-    public void reportSortedResults(File report) throws FileNotFoundException {
-        if (report.exists()) {
-            report.delete();
-        }
-        PrintStream out = new PrintStream(report);
-        LogRecordAuditLog.sortBy = LogRecordAuditLog.SortBy.BEAID_LINE;
-        List<LogRecordAuditLog> sortedResults = new ArrayList<LogRecordAuditLog>(results);
-        Collections.sort(sortedResults);
-        String previousBeaId = null;
-        String beaIdEnterTime = "unknown";
-        for (LogRecordAuditLog logRecord : sortedResults) {
-            if (!logRecord.getBeaId().equals(previousBeaId)) {
-                previousBeaId = logRecord.getBeaId();
-                beaIdEnterTime = logRecord.getTimeStamp();
-                logRecord.setFirstInBeaId(true);
-            }
-            logRecord.setBeaIdEnterTime(beaIdEnterTime);
-        }
-        LogRecordAuditLog.sortBy = LogRecordAuditLog.SortBy.ENTRYTIME_BEAID_LINE;
-        Collections.sort(sortedResults);
-        for (LogRecordAuditLog logRecord : sortedResults) {
-            logRecord.reportService(out);
-        }
-        out.printf("%s\n", new String(new char[80]).replace("\0", "-"));
-        out.printf("%s\n", "");
-        for (LogRecordAuditLog logRecord : sortedResults) {
-            logRecord.reportData(out);
-        }
-        out.close();
-    }
-
-    public void reportSortedResults(File report, Set<LogRecordTimeLog> logRecordTimeLogs) throws FileNotFoundException {
-        if (report.exists()) {
-            report.delete();
-        }
-        PrintStream out = new PrintStream(report);
-        LogRecordAuditLog.sortBy = LogRecordAuditLog.SortBy.BEAID_LINE;
-        List<LogRecordAuditLog> sortedResults = new ArrayList<LogRecordAuditLog>(results);
-        Collections.sort(sortedResults);
-        LogRecordAuditLog previousLogRecord = new LogRecordAuditLog(); //empty, na zacatku mimo collection
-        String beaIdEnterTime = "unknown";
-        for (LogRecordAuditLog logRecord : sortedResults) {
-            if (!logRecord.getBeaId().equals(previousLogRecord.getBeaId())) {
-                previousLogRecord.setLastInBeaId(true); //pro prvni je mimo kolekci
-                beaIdEnterTime = logRecord.getTimeStamp();
-                logRecord.setFirstInBeaId(true);
-            }
-            previousLogRecord = logRecord;
-            logRecord.setBeaIdEnterTime(beaIdEnterTime);
-        }
-        previousLogRecord.setLastInBeaId(true);
-        LogRecordAuditLog.sortBy = LogRecordAuditLog.SortBy.ENTRYTIME_BEAID_LINE;
-        Collections.sort(sortedResults);
-        for (LogRecordAuditLog logRecord : sortedResults) {
-            logRecord.reportService(out);
-            reportTimeLog(out, logRecord, logRecordTimeLogs);
-        }
-        out.printf("%s\n", new String(new char[80]).replace("\0", "-"));
-        LogRecordTimeLog.sortBy = LogRecordTimeLog.SortBy.BEAID_LINE;
-        List<LogRecordTimeLog> sortedTimeResults = new ArrayList<LogRecordTimeLog>(logRecordTimeLogs);
-        LogRecordTimeLog previousTimeLogRecord = new LogRecordTimeLog(); //empty, na zacatku mimo collection
-        beaIdEnterTime = "unknown";
-        for (LogRecordTimeLog logRecord : sortedTimeResults) {
-            if (!logRecord.getBeaId().equals(previousLogRecord.getBeaId())) {
-                previousTimeLogRecord = logRecord;
-                beaIdEnterTime = logRecord.getTimeStamp();
-                logRecord.setFirstInBeaId(true);
-            }
-            logRecord.setBeaIdEnterTime(beaIdEnterTime);
-        }
-        LogRecordTimeLog.sortBy = LogRecordTimeLog.SortBy.ENTRYTIME_BEAID_LINE;
-        Collections.sort(sortedTimeResults);
-        for (LogRecordTimeLog timeLogRecord : sortedTimeResults) {
-            timeLogRecord.reportData(out);
-        }
-        out.printf("%s\n", new String(new char[80]).replace("\0", "-"));
-        out.printf("%s\n", "");
-        for (LogRecordAuditLog logRecord : sortedResults) {
-            logRecord.reportData(out);
-        }
-        out.close();
-    }
-
-    private void reportTimeLog(PrintStream out, LogRecordAuditLog auditLogRecord, Set<LogRecordTimeLog> logRecordTimeLogs) {
-        if (auditLogRecord.isLastInBeaId()) {
-           for (LogRecordTimeLog logRecordTimeLog : logRecordTimeLogs) {
-               if (logRecordTimeLog.getBeaId().equals(auditLogRecord.getBeaId()) && logRecordTimeLog.getMarkerPrefix().equals(auditLogRecord.getMarkerPrefix())) {
-                   logRecordTimeLog.reportData(out);
-               }
-           }
-        }
-    }
 
     protected void readLogRecord(SeekableInputStream raf, String beaId, long pointer, String logFileName) throws IOException {
         String line;

@@ -17,7 +17,6 @@ import com.o2.cz.cip.hashseek.logs.auditlog.HashSeekAuditLog;
 import com.o2.cz.cip.hashseek.logs.auditlog.LogRecordAuditLog;
 import com.o2.cz.cip.hashseek.logs.evaluate.*;
 import com.o2.cz.cip.hashseek.logs.timelog.HashSeekTimeLog;
-import com.o2.cz.cip.hashseek.remote.client.SingleRemoteSeek;
 import com.o2.cz.cip.hashseek.remote.listener.RemoteEsbAuditSeek;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -121,10 +120,6 @@ class ProcessCommandHandler implements HttpHandler, Runnable {
 		this.exchange = exchange;
 	}
 
-	public ProcessCommandHandler getParent() {
-		return parent;
-	}
-
 	public void setParent(ProcessCommandHandler parent) {
 		this.parent = parent;
 	}
@@ -135,28 +130,6 @@ class ProcessCommandHandler implements HttpHandler, Runnable {
 
 	public void setNumberOfThreads(int numberOfThreads) {
 		this.numberOfThreads = numberOfThreads;
-	}
-
-	private void writeToBrowser(String query, OutputStream os, BufferedReader input) throws IOException {
-		String line;
-		while ((line = input.readLine()) != null) {
-			checkFileName(query, line);
-			if (!line.endsWith("\n") || !line.endsWith("\r")) {
-				line = String.format("%s\n", line);
-			}
-			if (!"".equals(line.trim())) {
-				os.write(line.getBytes());
-			}
-			os.flush();
-		}
-		os.close();
-	}
-
-	private void terminate(OutputStream os, BufferedReader input, Process process) throws IOException {
-		os.write("\n\n!!! PROCESS TERMINATED. !!!".getBytes());
-		os.flush();
-		os.close();
-		process.destroy();
 	}
 
 	private void checkFileName(String query, String line) {
@@ -258,17 +231,7 @@ class ProcessCommandHandler implements HttpHandler, Runnable {
         session.setFileName(String.format("./reports/%s_%s-%s.txt", session.getDefect(), appArguments.getDateFrom(), appArguments.getDateTo()));
 		long start = System.currentTimeMillis();
         session.setStart(start);
-        HashVersionEvaluator hashVersionEvaluator = new HashVersionEvaluator();
-        int version = hashVersionEvaluator.hashVersion(appArguments);
-        if (version == 0) {
-            oldSeek(session, detailedOutput, output, appArguments, seekedStrings, start);
-        } else if (version == 1) {
-            seek_v1(session, detailedOutput, output, appArguments, andStrings, filter, start);
-        } else if (version == -1) {
-            HashSeekConstants.outPrintLineSimple(output, "Versions of hash files during required period are different!! Please refine your search.");
-        } else {
-            HashSeekConstants.outPrintLineSimple(output, String.format("Unknown version '%s' of hash files!! This version is not supported yet.", version));
-        }
+        seek_v1(session, detailedOutput, output, appArguments, andStrings, filter, start);
 	}
 
     private void seek_v1(Session session, PrintStream detailedOutput, PrintStream output, AppArguments appArguments, List<List<String>> stringsToSeek, List<String> filter, long start) throws IOException, ClassNotFoundException, ParserConfigurationException, XPathExpressionException, SAXException {
@@ -345,53 +308,6 @@ class ProcessCommandHandler implements HttpHandler, Runnable {
         HashSeekAuditLog hashSeekAuditLog = new HashSeekAuditLog();
         hashSeekAuditLog.setResults(remotelogRecords);
         hashSeekAuditLog.reportSortedResults(new File(session.getFileName()),appArguments, output);
-    }
-
-    private void remoteSeek(List<List<String>> seekStrings, Set<String> missedFiles, AppArguments appArguments, PrintStream output, Session session) throws ClassNotFoundException, IOException {
-        Set<AbstractLogRecord> remotelogRecords = new HashSet<AbstractLogRecord>();
-        HashSeekConstants.outPrintLine(output, String.format("Budou se prohledavat soubory na vzdalenych strojich:"));
-        Set<SingleRemoteSeek> singleRemoteSeeks = new HashSet<SingleRemoteSeek>();
-        for (String fileName : missedFiles) {
-            singleRemoteSeeks.addAll(prepareRemoteSeeks(seekStrings, fileName, appArguments, output));
-        }
-        for (SingleRemoteSeek singleRemoteSeek : singleRemoteSeeks) {
-            HashSeekConstants.outPrintLine(output, String.format("%s:%s <<<- '%s'", singleRemoteSeek.getHost(), singleRemoteSeek.getPort(), singleRemoteSeek.getRemoteMessage().getSeekParameters().getClientFileToSeek()));
-        }
-        for (SingleRemoteSeek singleRemoteSeek : singleRemoteSeeks) {
-            Set<LogRecordAuditLog> logRecords = singleRemoteSeek.remoteSeekByClientFileName(output);
-            if (logRecords != null) {
-                remotelogRecords.addAll(logRecords);
-            }
-        }
-        HashSeekAuditLog hashSeekAuditLog = new HashSeekAuditLog();
-        hashSeekAuditLog.setResults(remotelogRecords);
-        hashSeekAuditLog.reportSortedResults(new File(session.getFileName()),appArguments);
-    }
-
-
-    private Set<SingleRemoteSeek> prepareRemoteSeeks(List<List<String>> seekStrings, String fileName, AppArguments appArguments, PrintStream output) throws IOException, ClassNotFoundException {
-        fileName = fileName.replaceFirst(".bgz","");
-        Set<SingleRemoteSeek> singleRemoteSeeks = new HashSet<SingleRemoteSeek>();
-        List<String> remoteSeekStrings = new LinkedList<String>();
-        for (List<String> seekStringList : seekStrings) {
-            for (String seekString : seekStringList) {
-                remoteSeekStrings.add(seekString);
-            }
-        }
-        SingleRemoteSeek singleRemoteSeek = new SingleRemoteSeek();
-        if (appArguments.isSeekProd()) {
-            singleRemoteSeek.initialize(remoteSeekStrings.toArray(new String[0]), fileName,output, AppProperties.PROD_PREFIX);
-        }
-        if (appArguments.isSeekPredprod()) {
-            singleRemoteSeek.initialize(remoteSeekStrings.toArray(new String[0]), fileName, output, AppProperties.PREDPROD_PREFIX);
-        }
-        if (appArguments.isSeekTest()) {
-            singleRemoteSeek.initialize(remoteSeekStrings.toArray(new String[0]), fileName, output, AppProperties.TEST_PREFIX);
-        }
-        if (singleRemoteSeek.isInitialized()) {
-            singleRemoteSeeks.add(singleRemoteSeek);
-        }
-        return singleRemoteSeeks;
     }
 
 
@@ -543,13 +459,6 @@ class ProcessCommandHandler implements HttpHandler, Runnable {
 		} finally {
 			parent.setNumberOfThreads(parent.getNumberOfThreads() - 1);
 		}
-	}
-
-	private void deleteFile(String fileName) {
-		fileName = fileName.replaceAll("[/\\/]", ""); //opatreni kdyby nekdo chtel neco mazat na filesystemu
-		fileName = String.format("./%s.properties", fileName);
-		File fileToDelete = new File(fileName);
-		fileToDelete.delete();
 	}
 
 }
