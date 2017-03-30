@@ -8,12 +8,9 @@ import java.io.*;
  */
 public class RandomAccessFile extends java.io.RandomAccessFile {
     private byte[] bytebuffer;
-    private int bufferlength;
     private int maxread;
     private int buffpos;
     private ByteArrayOutputStream bout=new ByteArrayOutputStream(8000);
-    private long previousWordPosition;
-    private File file;
 
     public RandomAccessFile(File file, String mode) throws FileNotFoundException {
         this(file, mode, 65536);
@@ -21,15 +18,9 @@ public class RandomAccessFile extends java.io.RandomAccessFile {
 
     public RandomAccessFile(File file, String mode, int bufferlength) throws FileNotFoundException {
         super(file, mode);
-        this.bufferlength = bufferlength;
         bytebuffer = new byte[bufferlength];
         maxread = 0;
         buffpos = 0;
-        this.file = file;
-    }
-
-    public File getFile() {
-        return file;
     }
 
     @Override
@@ -42,66 +33,6 @@ public class RandomAccessFile extends java.io.RandomAccessFile {
         }
         buffpos++;
         return bytebuffer[buffpos - 1] & 0xFF;
-    }
-
-    public String readRaw(int maxLen) throws IOException {
-        byte[] raw = readRawBytes(maxLen);
-        if (raw == null) {
-            return null;
-        } else {
-            return new String(raw,"UTF-8");
-        }
-    }
-
-    public byte[] readRawBytes(int maxLen) throws IOException {
-        bout.reset();
-        int c = -1;
-        boolean eol = false;
-        int len = 0;
-        while (len < maxLen) {
-            switch (c = read()) {
-                case -1:
-                    eol = true;
-                    break;
-                default:
-                    bout.write((byte) c);
-                    len++;
-                    break;
-            }
-        }
-        if ((c == -1) && (bout.size() == 0)) {
-            return null;
-        }
-        return bout.toByteArray();
-    }
-
-    public String readRecord() throws IOException {
-        bout.reset();
-        int c = -1;
-        boolean eol = false;
-        while (!eol) {
-            switch (c = read()) {
-                case -1:
-                case '\n':
-                    eol = true;
-                    break;
-                case '\r':
-                    eol = true;
-                    long cur = getFilePointer();
-                    if ((read()) != '\n') {
-                        seek(cur);
-                    }
-                    break;
-                default:
-                    bout.write((byte) c);
-                    break;
-            }
-        }
-
-        if ((c == -1) && (bout.size() == 0)) {
-            return null;
-        }
-        return new String(bout.toByteArray(),"UTF-8");
     }
 
     @Override
@@ -134,116 +65,6 @@ public class RandomAccessFile extends java.io.RandomAccessFile {
         return read;
     }
 
-    public String readWord() throws IOException {
-        byte[] word = readWordBytes();
-        if (word == null) {
-            return null;
-        } else {
-            return new String(word,"UTF-8");
-        }
-    }
-
-    public byte[] readWordBytes() throws IOException {
-        bout.reset();
-        int c = -1;
-        boolean eow = false;
-        while (!eow) {
-            c = read();
-            if (c < 32 && c > 0) { //control filtrujeme
-                break;
-            }
-            switch (c) {
-                case -1:
-                case '<':
-                    eow = true;
-                    break;
-                case '>':
-                    eow = true;
-                    break;
-                case ';':
-                    eow = true;
-                    break;
-                case '\"':
-                    eow = true;
-                    break;
-                case '=':
-                    eow = true;
-                    break;
-                case '/':
-                    eow = true;
-                    break;
-                case ' ':
-                    eow = true;
-                    break;
-                case '\\':
-                    eow = true;
-                    break;
-                case ',':
-                    eow = true;
-                    break;
-                case '(':
-                    eow = true;
-                    break;
-                case ')':
-                    eow = true;
-                    break;
-                case '\'':
-                    eow = true;
-                    break;
-                case ':':
-                    eow = true;
-                    break;
-                case '$':
-                    eow = true;
-                    break;
-                case '^':
-                    eow = true;
-                    break;
-                case '&':
-                    eow = true;
-                    break;
-                case '*':
-                    eow = true;
-                    break;
-                case '#':
-                    eow = true;
-                    break;
-                case '!':
-                    eow = true;
-                    break;
-                case '`':
-                    eow = true;
-                    break;
-                case ']':
-                    eow = true;
-                    break;
-                case '[':
-                    eow = true;
-                    break;
-                case '?':
-                    eow = true;
-                    break;
-                case '+':
-                    eow = true;
-                    break;
-                case '%':
-                    eow = true;
-                    break;
-                default:
-                    bout.write((byte) c);
-                    break;
-            }
-        }
-        if ((c == -1) && (bout.size() == 0)) {
-            return null;
-        }
-        return bout.toByteArray();
-    }
-
-
-    public long getPreviousWordPosition() {
-        return previousWordPosition;
-    }
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {

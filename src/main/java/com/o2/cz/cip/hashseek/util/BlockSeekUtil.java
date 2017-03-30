@@ -1,20 +1,13 @@
 package com.o2.cz.cip.hashseek.util;
 
-import com.o2.cz.cip.hashseek.core.BlockSeek;
-
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.UnsupportedCharsetException;
-import java.util.logging.Logger;
 
 /**
  * Created by pavelnovotny on 07.03.14.
  */
 public class BlockSeekUtil {
 
-    public static final int INT_SIZE = Integer.SIZE / Byte.SIZE;
-    public static final int LONG_SIZE = Long.SIZE / Byte.SIZE;
     public static final int MAX_WORD_SIZE = 100;
-    public static int HASH_SPACE_RECORD_SIZE = BlockSeekUtil.LONG_SIZE + BlockSeekUtil.INT_SIZE;
 
     public static int normalizeToHashSpace(int javaHash, int hashSpace) {
         return javaHash % hashSpace;

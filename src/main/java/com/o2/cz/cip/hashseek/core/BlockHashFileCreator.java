@@ -279,20 +279,6 @@ public class BlockHashFileCreator {
         resetFileBuffer();
     }
 
-    private void createHumanReadableFile() throws IOException {
-        BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream("/Users/pavelnovotny/temp/hash/hashRaw.hash.sorted.readable", false));
-        DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream("/Users/pavelnovotny/temp/hash/hashRaw.hash.sorted")));
-        try {
-            while (true) {
-                out.write(String.format("%020d\n", in.readLong()).getBytes());
-            }
-        } catch (EOFException e) {
-        } finally {
-            in.close();
-            out.close();
-        }
-    }
-
     public static void main (String args[]) throws Exception {
         BlockHashFileCreator blockHashFileCreator = new BlockHashFileCreator();
         blockHashFileCreator.createHashFile(new File(args[0]), new File(args[1]), new File(args[2]));

@@ -1,7 +1,5 @@
 package com.o2.cz.cip.hashseek.io;
 
-import net.sf.samtools.util.BlockCompressedInputStream;
-
 import java.io.*;
 
 /**
@@ -35,11 +33,7 @@ public class BlockHashReader {
 
     public BlockHashReader(File file, int blockSize, long[] customBlocks) throws IOException {
         fis = new FileInputStream(file);
-        if(BgzUtil.isBgzFile(file)){
-            inStream= new BlockCompressedInputStream(fis);
-        }else{
-            inStream = new BufferedInputStream(fis, BUFFER_SIZE);
-        }
+        inStream = new BufferedInputStream(fis, BUFFER_SIZE);
         this.javaHashBig = 0;
         this.javaHashSmall = 0;
         this.smallWordLength = 0;
@@ -49,7 +43,7 @@ public class BlockHashReader {
         this.useBlock = blockSize > 0 || customBlocks != null;
         this.useBlockSize = blockSize > 0 && customBlocks == null;
         this.useCustomBlocks = customBlocks != null;
-        long fileLength = BgzUtil.fileLength(file);
+        long fileLength = file.length();
         if (useBlock) {
             if (useBlockSize) {
                 if (fileLength/blockSize > Integer.MAX_VALUE) {
