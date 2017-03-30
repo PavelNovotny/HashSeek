@@ -9,6 +9,8 @@ import com.o2.cz.cip.hashseek.blockseek.blockbpmlog.BpmSeekResults;
 import com.o2.cz.cip.hashseek.blockseek.blocktimelog.TimeSeekResults;
 import com.o2.cz.cip.hashseek.blockseek.noelog.NoeSeekResults;
 import com.o2.cz.cip.hashseek.core.HashSeekConstants;
+import com.o2.cz.cip.hashseek.io.RandomSeekableInputStream;
+import com.o2.cz.cip.hashseek.io.SeekableInputStream;
 import com.o2.cz.cip.hashseek.logs.AbstractLogRecord;
 import com.o2.cz.cip.hashseek.logs.AbstractLogSeek;
 import com.o2.cz.cip.hashseek.logs.auditlog.HashSeekAuditLog;
@@ -16,6 +18,7 @@ import com.o2.cz.cip.hashseek.logs.auditlog.LogRecordAuditLog;
 import com.o2.cz.cip.hashseek.logs.evaluate.*;
 import com.o2.cz.cip.hashseek.logs.timelog.HashSeekTimeLog;
 import com.o2.cz.cip.hashseek.remote.client.SingleRemoteSeek;
+import com.o2.cz.cip.hashseek.remote.listener.RemoteEsbAuditSeek;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.slf4j.Logger;
@@ -299,8 +302,8 @@ class ProcessCommandHandler implements HttpHandler, Runnable {
             //remote seek přidán Vojkovo metodou
             boolean append = false;
             if (session.isOnlineEsbSeek()) {
-                Set<String> missedLastFiles = FileEvaluatorUtil.missedLastFiles(appArguments, new HashSet<File>(auditFilesToSeek), "", auditFileEvaluator);
-                remoteSeek(stringsToSeek, missedLastFiles, appArguments, output, session);
+                Set<File> missedLastFiles = FileEvaluatorUtil.nonIndexedFiles(appArguments);
+                localSeqSeek(stringsToSeek, missedLastFiles, appArguments, output, session);
                 append = true;
             }
             auditSeekResults.runSeek(stringsToSeek, filter, output); //spustí i ostatní dependent
@@ -319,6 +322,29 @@ class ProcessCommandHandler implements HttpHandler, Runnable {
             noeSeekResults.reportSortedResults(new File(session.getFileName()), output,session,appArguments, false);
         }
         output.println(String.format("FINISHED in %s.", HashSeekConstants.formatedTimeMillis(System.currentTimeMillis() - start)));
+    }
+
+    private void localSeqSeek(List<List<String>> seekStringList, Set<File> missedFiles, AppArguments appArguments, PrintStream output, Session session) throws IOException {
+        HashSeekConstants.outPrintLine(output, String.format("Sekvenční hledání:"));
+        Set<String> seekStrings = new HashSet<String>();
+        for (List<String> list : seekStringList) {
+            for (String seekString : list) {
+                seekStrings.add(seekString);
+            }
+        }
+        Set<AbstractLogRecord> remotelogRecords = new HashSet<AbstractLogRecord>();
+        for (File file : missedFiles) {
+            HashSeekConstants.outPrintLine(output, String.format("Soubor : %s", file.getPath()));
+            SeekableInputStream raf = new RandomSeekableInputStream(file, "r");
+            RemoteEsbAuditSeek remoteSeek = new RemoteEsbAuditSeek(raf);
+            remoteSeek.sequentialSeek(seekStrings, file.getPath());
+            for (LogRecordAuditLog logRecordAuditLog : remoteSeek.getResults()) {
+                remotelogRecords.add(logRecordAuditLog);
+            }
+        }
+        HashSeekAuditLog hashSeekAuditLog = new HashSeekAuditLog();
+        hashSeekAuditLog.setResults(remotelogRecords);
+        hashSeekAuditLog.reportSortedResults(new File(session.getFileName()),appArguments, output);
     }
 
     private void remoteSeek(List<List<String>> seekStrings, Set<String> missedFiles, AppArguments appArguments, PrintStream output, Session session) throws ClassNotFoundException, IOException {

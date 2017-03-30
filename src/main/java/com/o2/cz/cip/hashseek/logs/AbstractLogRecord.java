@@ -55,11 +55,19 @@ public abstract class AbstractLogRecord implements Comparable<AbstractLogRecord>
 
     public void setMarkerPrefix(String logFileName) {
         Pattern pattern = Pattern.compile(".*_s\\d"); //other_s1, jms_s2, etc...
-        Matcher matcher = pattern.matcher(logFileName);
+        Matcher matcher = pattern.matcher(logFile.getName());
         if (matcher.find()) {
-            this.markerPrefix = matcher.group().substring(0,1) + matcher.group().substring(matcher.group().length()-1);
+            String domain = matcher.group().substring(0,1);
+            if (logFile.getPath().contains("gf")) { //maintest
+                domain = domain + "m";
+            } else if (logFile.getPath().contains("e2e")) { //E2E
+                domain = domain + "e";
+            } else if (logFile.getPath().contains("datamig")) {
+                domain = domain + "d";
+            }
+            this.markerPrefix = domain + matcher.group().substring(matcher.group().length()-1);
         } else {
-            this.markerPrefix = "??";
+            this.markerPrefix = "xx";
         }
     }
 
@@ -133,7 +141,7 @@ public abstract class AbstractLogRecord implements Comparable<AbstractLogRecord>
 
 
     public String lineMarker() {
-        return String.format("%s%012d",markerPrefix, filePosition);
+        return String.format("%s%016d",getMarkerPrefix(), filePosition);
     }
 
     private String extractService(String part) {
@@ -220,6 +228,9 @@ public abstract class AbstractLogRecord implements Comparable<AbstractLogRecord>
     }
 
     public String getMarkerPrefix() {
+        if (markerPrefix ==null) {
+            setMarkerPrefix(logFile.getPath());
+        }
         return markerPrefix;
     }
 

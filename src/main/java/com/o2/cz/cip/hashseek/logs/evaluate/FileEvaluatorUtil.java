@@ -7,6 +7,7 @@ import com.o2.cz.cip.hashseek.core.HashSeekConstants;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Set;
@@ -78,6 +79,76 @@ public class FileEvaluatorUtil {
             }
         }
         return  missedFiles;
+    }
+
+    private static void filterNonIndexed(String env, int size, Set<File> allNonIndexedFiles, Set<File> nonIndexedFiles) {
+        Calendar current = Calendar.getInstance();
+        final String today = HashSeekConstants.dateString(current);
+        for (int i = 1;i <= size; i++) {
+            String bgzFolder = AppProperties.getValue(env + ".logLocation."+i);
+            String folder = AppProperties.getValue(env + ".transferLocation."+i);
+            if (folder == null) {
+                HashSeekConstants.outPrintLine(String.format("folder '%s'. Please check in '%s'", folder, AppProperties.HASH_SEEK_PROPERTIES));
+                continue;
+            }
+            if (bgzFolder == null) {
+                HashSeekConstants.outPrintLine(String.format("bgzFolder '%s'. Please check in '%s'", bgzFolder, AppProperties.HASH_SEEK_PROPERTIES));
+                continue;
+            }
+            File dir = new File(folder);
+            if (dir.isDirectory()) {
+                File[] files = dir.listFiles(new FilenameFilter() {
+                    public boolean accept(File file, String name) {
+                        if (name.matches("^(other|jms).*"+today+"\\.\\d\\d$") || name.endsWith(".audit")) {
+                            return true;
+                        }
+                        return false;
+                    }
+                });
+                allNonIndexedFiles.addAll(Arrays.asList(files));
+                nonIndexedFiles.addAll(Arrays.asList(files));
+            } else {
+                HashSeekConstants.outPrintLine(String.format("'%s' is NOT directory. Please check in '%s'", dir, AppProperties.HASH_SEEK_PROPERTIES));
+                continue;
+            }
+            File bgzDir = new File(bgzFolder);
+            if (bgzDir.isDirectory()) {
+                File[] files = bgzDir.listFiles(new FilenameFilter() {
+                    public boolean accept(File file, String name) {
+                        if (name.matches(".*.\\d\\d\\.bgz$")) {
+                            return true;
+                        }
+                        return false;
+                    }
+                });
+                for (File bgzFile : files) {
+                    for (File file : allNonIndexedFiles) {
+                        if (bgzFile.getPath().contains(file.getName()) && !file.getName().endsWith(".audit")) {
+                            nonIndexedFiles.remove(file);
+                        }
+                    }
+                }
+            } else {
+                HashSeekConstants.outPrintLine(String.format("'%s' is NOT directory. Please check in '%s'", dir, AppProperties.HASH_SEEK_PROPERTIES));
+                continue;
+            }
+        }
+    }
+
+    public static Set<File> nonIndexedFiles(AppArguments appArguments) {
+        final Set<File> nonIndexedFiles = new HashSet<File>();
+        final Set<File> allIndexedFiles = new HashSet<File>();
+        if (appArguments.isSeekProd()) {
+            int size = AppProperties.filteredProperties("prod.logLocation").size();
+            filterNonIndexed("prod", size, allIndexedFiles, nonIndexedFiles);
+        } else if (appArguments.isSeekPredprod()) {
+            int size = AppProperties.filteredProperties("predprod.logLocation").size();
+            filterNonIndexed("predprod", size, allIndexedFiles, nonIndexedFiles);
+        } else if (appArguments.isSeekTest()) {
+            int size = AppProperties.filteredProperties("test.logLocation").size();
+            filterNonIndexed("test", size, allIndexedFiles, nonIndexedFiles);
+        }
+        return nonIndexedFiles;
     }
 
     public static Set<String> missedLastFiles(AppArguments appArguments, Set<File> existingFiles, String fileSuffix,FileEvaluator fileEvaluator) {
