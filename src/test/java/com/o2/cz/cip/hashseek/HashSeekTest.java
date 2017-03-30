@@ -2,13 +2,9 @@ package com.o2.cz.cip.hashseek;
 
 import com.o2.cz.cip.hashseek.core.BlockHashFileCreator;
 import com.o2.cz.cip.hashseek.core.HashSeekConstants;
-import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import java.io.*;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 /**
