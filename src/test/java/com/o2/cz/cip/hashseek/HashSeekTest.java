@@ -1,5 +1,6 @@
 package com.o2.cz.cip.hashseek;
 
+import com.o2.cz.cip.hashseek.app.AppProperties;
 import com.o2.cz.cip.hashseek.blockseek.AbstractSeekResults;
 import com.o2.cz.cip.hashseek.blockseek.blockauditlog.AuditSeekResults;
 import com.o2.cz.cip.hashseek.blockseek.blockbpmlog.BpmBlockLogRecord;
@@ -253,6 +254,19 @@ public class HashSeekTest {
         return hash % maxHashValue;
     }
 
+
+    @Test
+    public void testCreateIndex() throws Exception {
+        File file = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19");
+        File hashFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.hash");
+        HashSeekConstants.outPrintLine("started testCreateIndex");
+        AppProperties.loadProperties();
+        BlockHashFileCreator hashCreator = new BlockHashFileCreator();
+        hashCreator.createHashFile(file, hashFile, null);
+        HashSeekConstants.outPrintLine("ended testCreateIndex");
+    }
+
+
     @Test
     public void testList() throws Exception {
         DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream("/Users/pavelnovotny/temp/hash/hashRaw.hash.sorted")));
@@ -363,17 +377,20 @@ public class HashSeekTest {
     @Test
     public void testCreateHash() throws Exception {
         File file = new File("/Users/pavelnovotny/temp/logData/other_s1_alsb_aspect.audit.20140304.14");
+        File hashFile = new File("/Users/pavelnovotny/temp/logData/other_s1_alsb_aspect.audit.20140304.14.hash");
+        File toDir = new File("/Users/pavelnovotny/temp/logData/");
         //vytvoření hashe
         BlockHashFileCreator hashFileCreator = new BlockHashFileCreator();
-        hashFileCreator.createHashFile(file);
+        hashFileCreator.createHashFile(file, hashFile, null);
     }
 
     @Test
     public void testHashCorrectness() throws Exception {
         File file = new File("/Users/pavelnovotny/temp/logData/other_s1_alsb_aspect.audit.20140304.14");
+        File hashFile = new File("/Users/pavelnovotny/temp/logData/other_s1_alsb_aspect.audit.20140304.14");
         //vytvoření hashe
         BlockHashFileCreator hashFileCreator = new BlockHashFileCreator();
-        hashFileCreator.createHashFile(file);
+        hashFileCreator.createHashFile(file, hashFile, null);
         //načtení slov a jejich pozic pro pozdější kontrolu
         Map<String, Long> wordPositions = new HashMap<String, Long>();
         RandomAccessFile raf = new RandomAccessFile(file, "r");

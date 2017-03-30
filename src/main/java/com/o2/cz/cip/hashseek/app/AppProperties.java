@@ -107,7 +107,7 @@ public class AppProperties {
         throw new RuntimeException("Bad domain prefix: "+ domain + " ["+ HashSeekConstants.PREDPROD +","+HashSeekConstants.PROD +","+ HashSeekConstants.TEST +"]");
     }
 
-    synchronized static void loadProperties(){
+    public synchronized static void loadProperties(){
         File propsFile=new File(HASH_SEEK_PROPERTIES);
         try {
             properties = new Properties();

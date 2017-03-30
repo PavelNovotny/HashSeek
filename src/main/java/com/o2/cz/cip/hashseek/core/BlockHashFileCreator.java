@@ -1,6 +1,5 @@
 package com.o2.cz.cip.hashseek.core;
 
-import com.o2.cz.cip.hashseek.app.AppProperties;
 import com.o2.cz.cip.hashseek.io.*;
 import com.o2.cz.cip.hashseek.io.RandomAccessFile;
 import com.o2.cz.cip.hashseek.util.BlockSeekUtil;
@@ -29,7 +28,7 @@ public class BlockHashFileCreator {
     private String tempPlace = "./hash/";
     private String hashRawFileName = "hashRaw.hash";
     private String blockSuffix = HashSeekConstants.BLOCKS_FILE_SUFFIX;
-    private String hashSuffix = ".hash_v1";
+    private String hashSuffix = ".hash";
     private static Logger LOGGER = Logger.getLogger(BlockHashFileCreator.class);
 
     public void resetFileCounter() {
@@ -86,14 +85,11 @@ public class BlockHashFileCreator {
         return hashSpaceSize;
     }
 
-    public void createHashFile(File fileToHash) throws Exception {
+    public void createHashFile(File fileToHash, File hashIndexFile, File blockFile) throws Exception {
         LOGGER.debug(String.format("started indexing '%s'.", fileToHash.getPath()));
         BlockHashReader bhr;
         allocateFileBuffer();
-        File bgzFile = fileToHash;
-        File bgzDir=AppProperties.getBgzDir(fileToHash.getParentFile());
-        File blockFile = new File(bgzDir,fileToHash.getName().concat(blockSuffix));
-        if (blockFile.exists()) {
+        if (blockFile!=null && blockFile.exists()) {
             int numberOfBlocks = (int)(blockFile.length() / LONG_SIZE);
             DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(blockFile)));
             long[] customBlocks = new long[numberOfBlocks];
@@ -107,9 +103,9 @@ public class BlockHashFileCreator {
             } finally {
                 in.close();
             }
-            bhr = new BlockHashReader(bgzFile, 0, customBlocks);
+            bhr = new BlockHashReader(fileToHash, 0, customBlocks);
         } else {
-            bhr = new BlockHashReader(bgzFile, DEFAULT_FIXED_BLOCK_SIZE, null);
+            bhr = new BlockHashReader(fileToHash, DEFAULT_FIXED_BLOCK_SIZE, null);
         }
         int end;
         while ((end = bhr.readWords()) > 0) {
@@ -136,12 +132,7 @@ public class BlockHashFileCreator {
         int newSpaceSize = mergeSortedFiles(integerSpaceFile);
         System.out.println(String.format("hash space size %s", newSpaceSize));
         normalizeHashSpace(newSpaceSize, integerSpaceFile);
-        writeFinalHashFile(fileToHash, newSpaceSize);
-        BgzUtil.createBlockCompressedGzFile(fileToHash, AppProperties.getBgzBlockSize(),AppProperties.getBgzIndexBufferSize());
-        //.bgz.hash proto, aby byl stejný název jak pro soubory které se zabalí před indexováním tak pro soubory po indexování. Vzhledem k tomu že existuje již zabalený původní soubor je tohle logická volba
-        File hashDir= AppProperties.getHashDir(fileToHash.getParentFile());
-        BgzUtil.createBlockCompressedGzFile(new File(hashDir,fileToHash.getName() + ".bgz.hash_v1"), AppProperties.getBgzBlockSize(), AppProperties.getBgzIndexBufferSize());
-        LOGGER.debug(String.format("ended indexing '%s'.", fileToHash.getPath()));
+        writeFinalHashFile(hashIndexFile, blockFile, newSpaceSize);
     }
 
 
@@ -168,24 +159,20 @@ public class BlockHashFileCreator {
         freeFileBuffer();
         File normalizedSpaceFile = new File(String.format("%s/%s.%s",tempPlace, hashRawFileName, ".normalized"));
         int spaceSize = mergeSortedFiles(normalizedSpaceFile);
-        //tady můžeme porovnat jaké duplicity vznikly normalizací.
         System.out.println(String.format("required hash space size %s", newSpaceSize));
         System.out.println(String.format("final hash space size %s", spaceSize));
         return newSpaceSize;
     }
 
-    private void writeFinalHashFile(File fileToHash, int hashSpace) throws IOException {
-        //RandomAccessFile hashRawSortedFile = new RandomAccessFile(new File(String.format("%s/%s%s",tempPlace, hashRawFileName, sortedSuffix)),"r");
+    private void writeFinalHashFile(File hashIdexFile, File blockFile, int hashSpace) throws IOException {
         File normalizedSpaceFile = new File(String.format("%s/%s.%s",tempPlace, hashRawFileName, ".normalized"));
         RandomAccessFile hashRawSortedFile = new RandomAccessFile(normalizedSpaceFile,"r");
-        //hashovaný soubor bude zabalen, tak ještě přidáme .bgz aby byl název jednotný a šel pak jednoduše odvodit z názvu zabaleného původního souboru.
-        File finalHashFile =new File( AppProperties.getHashDir(fileToHash.getParentFile()),fileToHash.getName().concat(".bgz").concat(hashSuffix));
-        if (finalHashFile.exists()) {
-            finalHashFile.delete();
+        if (hashIdexFile.exists()) {
+            hashIdexFile.delete();
         }
         long[] hashSpacePointers = new long[hashSpace];
         int[] hashSpaceValuesCount = new int[hashSpace];
-        DataOutputStream finalHash = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(finalHashFile)));
+        DataOutputStream finalHash = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(hashIdexFile)));
         long filePointer = 0L;
         long longValue;
         int version = HASH_FILE_VERSION, hashValue, oldHashValue = 0, pointerValue; //verze hash indexu, pomocné proměnné
@@ -196,10 +183,8 @@ public class BlockHashFileCreator {
         filePointer += writeLong(finalHash, 0L); // hashSpaceTablePosition, později přepíšeme aktuální hodnotou pomocí RandomAccessFile
         filePointer += writeInt(finalHash, 0); //velikost hashSpace spočítáme na konci a pak přepíšeme
         //zapíšeme o jaký typ bloku se jedná, a velikost bloku (pro fixed) nebo počet bloků (pro custom)
-        File blockDir=AppProperties.getBgzDir(fileToHash.getParentFile());
-        File blockFile = new File(blockDir,fileToHash.getName().concat(blockSuffix));
         int blockSize, blockKind;
-        if (blockFile.exists()) { //custom blocks
+        if (blockFile != null && blockFile.exists()) { //custom blocks
             blockKind = CUSTOM_BLOCKS_KIND;
             blockSize = (int)(blockFile.length() / LONG_SIZE);
         } else { //fixed blocks
@@ -208,7 +193,7 @@ public class BlockHashFileCreator {
         }
         filePointer += writeInt(finalHash, blockKind);//zda se používá se customBlocks (1), nebo fixedBlocks (2)
         filePointer += writeInt(finalHash, blockSize);//velikost customBlocks, popř počet bytů na block, v případě fixedBlocks
-        if (blockFile.exists()) { //custom blocks
+        if (blockFile != null && blockFile.exists()) { //custom blocks
             DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(blockFile)));
             try {
                 while (true) {
@@ -255,7 +240,7 @@ public class BlockHashFileCreator {
                 filePointer += writeInt(finalHash, hashSpaceValuesCount[i]);
             }
             finalHash.close();
-            java.io.RandomAccessFile finalHashRafw = new java.io.RandomAccessFile(finalHashFile, "rw");
+            java.io.RandomAccessFile finalHashRafw = new java.io.RandomAccessFile(hashIdexFile, "rw");
             finalHashRafw.seek(INT_SIZE); //pozice za version
             finalHashRafw.writeLong(hashSpaceTablePosition);
             finalHashRafw.writeInt(hashSpace);
@@ -310,7 +295,7 @@ public class BlockHashFileCreator {
 
     public static void main (String args[]) throws Exception {
         BlockHashFileCreator blockHashFileCreator = new BlockHashFileCreator();
-        blockHashFileCreator.createHashFile(new File(args[0]));
+        blockHashFileCreator.createHashFile(new File(args[0]), new File(args[1]), new File(args[2]));
     }
 
 }
