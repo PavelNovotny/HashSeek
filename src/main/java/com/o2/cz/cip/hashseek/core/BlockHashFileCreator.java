@@ -27,8 +27,6 @@ public class BlockHashFileCreator {
     private static final int LONG_SIZE = Long.SIZE / Byte.SIZE;
     private String tempPlace = "./hash/";
     private String hashRawFileName = "hashRaw.hash";
-    private String blockSuffix = HashSeekConstants.BLOCKS_FILE_SUFFIX;
-    private String hashSuffix = ".hash";
     private static Logger LOGGER = Logger.getLogger(BlockHashFileCreator.class);
 
     public void resetFileCounter() {
