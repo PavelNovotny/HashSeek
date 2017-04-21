@@ -16,9 +16,7 @@ public class BlockHashFileCreator {
 
     public static final int SORT_BUFFER_SIZE_IN_BYTES = 512*1024*1024; //0,5 GB
     public static final int CUSTOM_BLOCKS_KIND = 1;
-    public static final int FIXED_BLOCKS_KIND = 2;
     public static final int HASH_FILE_VERSION = 1;
-    public static final int DEFAULT_FIXED_BLOCK_SIZE = 10000;
     public static final int FILE_HASH_WITH_POINTER_BUFFER_SIZE = SORT_BUFFER_SIZE_IN_BYTES/Long.SIZE*Byte.SIZE;
     private long[] hashWithPointerBuffer;
     private int hashWithPointerBufferPosition;
@@ -85,26 +83,26 @@ public class BlockHashFileCreator {
 
     public void createHashFile(File fileToHash, File hashIndexFile, File blockFile) throws Exception {
         LOGGER.debug(String.format("started indexing '%s'.", fileToHash.getPath()));
+        if (blockFile == null || !blockFile.exists()) {
+            LOGGER.error(String.format("block file '%s' must exists. file '%s' was not indexed. .", blockFile.getPath(), fileToHash.getPath()));
+            return;
+        }
         BlockHashReader bhr;
         allocateFileBuffer();
-        if (blockFile!=null && blockFile.exists()) {
-            int numberOfBlocks = (int)(blockFile.length() / LONG_SIZE);
-            DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(blockFile)));
-            long[] customBlocks = new long[numberOfBlocks];
-            int index = 0;
-            try {
-                while (true) {
-                    long customBlockAddress = in.readLong();
-                    customBlocks[index++] = customBlockAddress;
-                }
-            } catch (EOFException e) {
-            } finally {
-                in.close();
+        int numberOfBlocks = (int)(blockFile.length() / LONG_SIZE);
+        DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(blockFile)));
+        long[] customBlocks = new long[numberOfBlocks];
+        int index = 0;
+        try {
+            while (true) {
+                long customBlockAddress = in.readLong();
+                customBlocks[index++] = customBlockAddress;
             }
-            bhr = new BlockHashReader(fileToHash, 0, customBlocks);
-        } else {
-            bhr = new BlockHashReader(fileToHash, DEFAULT_FIXED_BLOCK_SIZE, null);
+        } catch (EOFException e) {
+        } finally {
+            in.close();
         }
+        bhr = new BlockHashReader(fileToHash, 0, customBlocks);
         int end;
         while ((end = bhr.readWords()) > 0) {
             switch (end) {
@@ -175,33 +173,25 @@ public class BlockHashFileCreator {
         long longValue;
         int version = HASH_FILE_VERSION, hashValue, oldHashValue = 0, pointerValue; //verze hash indexu, pomocné proměnné
         List<Integer> pointers = new LinkedList<Integer>(); //list pro uložení aktuálních pointerů k hash
-        int fixedBlockSize = DEFAULT_FIXED_BLOCK_SIZE; //velikost bloku ke kterému se vztahuje ukazatel na blok - případ fixedBlocks
         //struktura souboru: verze, pozice na tabulku hashspace, velikost hashspace, případná tabulka custom bloků, pointery do hashovaného souboru, hashspace tabulka
         filePointer += writeInt(finalHash, version);
         filePointer += writeLong(finalHash, 0L); // hashSpaceTablePosition, později přepíšeme aktuální hodnotou pomocí RandomAccessFile
         filePointer += writeInt(finalHash, 0); //velikost hashSpace spočítáme na konci a pak přepíšeme
         //zapíšeme o jaký typ bloku se jedná, a velikost bloku (pro fixed) nebo počet bloků (pro custom)
         int blockSize, blockKind;
-        if (blockFile != null && blockFile.exists()) { //custom blocks
-            blockKind = CUSTOM_BLOCKS_KIND;
-            blockSize = (int)(blockFile.length() / LONG_SIZE);
-        } else { //fixed blocks
-            blockKind = FIXED_BLOCKS_KIND;
-            blockSize = fixedBlockSize;
-        }
+        blockKind = CUSTOM_BLOCKS_KIND;
+        blockSize = (int)(blockFile.length() / LONG_SIZE);
         filePointer += writeInt(finalHash, blockKind);//zda se používá se customBlocks (1), nebo fixedBlocks (2)
         filePointer += writeInt(finalHash, blockSize);//velikost customBlocks, popř počet bytů na block, v případě fixedBlocks
-        if (blockFile != null && blockFile.exists()) { //custom blocks
-            DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(blockFile)));
-            try {
-                while (true) {
-                    long customBlockAddress = in.readLong();
-                    filePointer += writeLong(finalHash, customBlockAddress);
-                }
-            } catch (EOFException e) {
-            } finally {
-                in.close();
+        DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(blockFile)));
+        try {
+            while (true) {
+                long customBlockAddress = in.readLong();
+                filePointer += writeLong(finalHash, customBlockAddress);
             }
+        } catch (EOFException e) {
+        } finally {
+            in.close();
         }
         try {
             while (true) {
