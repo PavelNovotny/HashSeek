@@ -10,9 +10,13 @@ import java.util.zip.GZIPOutputStream;
  * Created by pavelnovotny on 31.03.17.
  */
 //Document gz
+
 public class Dgz {
-    byte[] gz =   new byte[10000000];
-    byte[] read = new byte[100000000];
+    public static final int KILOBYTE = 1024;
+    public static final int MEGABYTE = 1024*KILOBYTE;
+
+    byte[] gz =   new byte[10*MEGABYTE];
+    byte[] read = new byte[100*MEGABYTE];
 
     public static void main(String[] args) throws IOException {
         Dgz dgz = new Dgz();
