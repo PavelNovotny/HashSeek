@@ -81,14 +81,7 @@ public class BlockHashFileCreator {
         return hashSpaceSize;
     }
 
-    public void createHashFile(File fileToHash, File hashIndexFile, File blockFile) throws Exception {
-        LOGGER.debug(String.format("started indexing '%s'.", fileToHash.getPath()));
-        if (blockFile == null || !blockFile.exists()) {
-            LOGGER.error(String.format("block file '%s' must exists. file '%s' was not indexed. .", blockFile.getPath(), fileToHash.getPath()));
-            return;
-        }
-        BlockHashReader bhr;
-        allocateFileBuffer();
+    private long[] documentAddressArray(File blockFile) throws IOException {
         int numberOfBlocks = (int)(blockFile.length() / LONG_SIZE);
         DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(blockFile)));
         long[] customBlocks = new long[numberOfBlocks];
@@ -102,6 +95,18 @@ public class BlockHashFileCreator {
         } finally {
             in.close();
         }
+        return customBlocks;
+    }
+
+    public void createHashFile(File fileToHash, File hashIndexFile, File blockFile) throws Exception {
+        LOGGER.debug(String.format("started indexing '%s'.", fileToHash.getPath()));
+        if (blockFile == null || !blockFile.exists()) {
+            LOGGER.error(String.format("block file '%s' must exists. file '%s' was not indexed. .", blockFile.getPath(), fileToHash.getPath()));
+            return;
+        }
+        BlockHashReader bhr;
+        allocateFileBuffer();
+        long[] customBlocks = documentAddressArray(blockFile);
         bhr = new BlockHashReader(fileToHash, 0, customBlocks);
         int end;
         while ((end = bhr.readWords()) > 0) {
