@@ -104,6 +104,9 @@ public class BgzSeekableInputStream extends SeekableInputStream {
                     len++;
                     break;
             }
+            if (eol) {
+                break;
+            }
         }
         if ((c == -1) && (bout.size() == 0)) {
             return null;
