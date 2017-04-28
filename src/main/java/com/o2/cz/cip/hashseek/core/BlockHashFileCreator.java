@@ -81,7 +81,7 @@ public class BlockHashFileCreator {
         return hashSpaceSize;
     }
 
-    private long[] documentAddressArray(File blockFile) throws IOException {
+    public long[] documentAddressArray(File blockFile) throws IOException {
         int numberOfBlocks = (int)(blockFile.length() / LONG_SIZE);
         DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(blockFile)));
         long[] customBlocks = new long[numberOfBlocks];
@@ -104,29 +104,16 @@ public class BlockHashFileCreator {
             LOGGER.error(String.format("block file '%s' must exists. file '%s' was not indexed. .", blockFile.getPath(), fileToHash.getPath()));
             return;
         }
-        BlockHashReader bhr;
         allocateFileBuffer();
-        long[] customBlocks = documentAddressArray(blockFile);
-        bhr = new BlockHashReader(fileToHash, 0, customBlocks);
-        int end;
-        while ((end = bhr.readWords()) > 0) {
-            switch (end) {
-                case BlockHashReader.END_ALL:
-                    writeToRawHashFile(bhr.smallWordLength, bhr.javaHashSmall, bhr.wordPosition);
-                    if (bhr.smallWordLength != bhr.bigWordLength) {
-                        writeToRawHashFile(bhr.bigWordLength, bhr.javaHashBig, bhr.wordPosition);
-                    }
-                    bhr.javaHashBig=0;
-                    bhr.bigWordLength=0;
-                    break;
-                case BlockHashReader.END_SMALL:
-                    writeToRawHashFile(bhr.smallWordLength, bhr.javaHashSmall, bhr.wordPosition);
-                    break;
-                default:
-                    break;
-            }
+        long[] docsLoc = documentAddressArray(blockFile);
+        for (int docIndex=0; docIndex<docsLoc.length-1; docIndex++) {
+            long start = docsLoc[docIndex];
+            long end = docsLoc[docIndex+1];
+            byte[] doc = DocumentReader.getDocument(fileToHash, start, end);
+            Analyzer analyzer = new Analyzer(doc);
+            byte[][] words = analyzer.analyze();
+            writeToRawHashFile(words, docIndex);
         }
-        bhr.close();
         writeSortedHashPart(); //posledni nemusí být úplně plný
         freeFileBuffer();
         File integerSpaceFile = new File(String.format("%s/%s.sorted",tempPlace, hashRawFileName));
@@ -135,7 +122,6 @@ public class BlockHashFileCreator {
         normalizeHashSpace(newSpaceSize, integerSpaceFile);
         writeFinalHashFile(hashIndexFile, blockFile, newSpaceSize);
     }
-
 
     private int normalizeHashSpace(int newSpaceSize, File oldSpaceFile) throws IOException { //účelem je přepočítat hashe na novou velikost a setřídit. Ve výsledku dostaneme k sobě hashe, které by byly na n-té pozici původní hash tabulky, kde n je nová velikost hash tabulky, tím pádem nepřijdeme o žádné pointry.
         allocateFileBuffer();
@@ -260,6 +246,22 @@ public class BlockHashFileCreator {
             writeSortedHashPart();
         }
     }
+
+    private int javaHash(byte[] word) {
+        int hash = 0;
+        for (int i=0; i< word.length; i++) {
+            hash = 31* hash + word[i];
+        }
+        return hash;
+    }
+
+    protected void writeToRawHashFile (byte[][] words, int pointer) throws IOException {
+        for (byte[] word : words) {
+            int javaHash = javaHash(word);
+            writeToRawHashFile(word.length, javaHash, pointer);
+        }
+    }
+
 
     private void writeSortedHashPart() throws IOException {
         Arrays.sort(hashWithPointerBuffer, 0, hashWithPointerBufferPosition); //quick sort, std. implementace v jave je ok, a pro tenhle ucel se hodi.

@@ -20,6 +20,8 @@ public class BlockHashReader {
     private FileInputStream fis;
     private int nextWordPosition = 0;
     InputStream inStream;
+    public byte[] smallWord = new byte[300];
+    public byte[] bigWord = new byte [300];
 
     int blockSize; //pokud neni 0, pouzije se blockSize, umožní řídit velikost indexu, tím že se pointer vztáhne k bloku. Pokud je 0, tak pointer ukazuje přímo na slovo.
     //je to z toho důvodu, že pro pointer použijeme místo long int, což jsou maximálně 2GB adresovatelného prostoru. Pokud např. blok roztáhneme na 8Byte, tak zvětšíme adresovatelný
@@ -198,27 +200,33 @@ public class BlockHashReader {
                     break;
                 case '-':
                     javaHashBig = 31 * javaHashBig + byteRead;
+                    bigWord[bigWordLength] = byteRead;
                     bigWordLength++;
                     end = END_SMALL;
                     break;
                 case '@':
                     javaHashBig = 31 * javaHashBig + byteRead;
+                    bigWord[bigWordLength] = byteRead;
                     bigWordLength++;
                     end = END_SMALL;
                     break;
                 case '_':
                     javaHashBig = 31 * javaHashBig + byteRead;
+                    bigWord[bigWordLength] = byteRead;
                     bigWordLength++;
                     end = END_SMALL;
                     break;
                 case '.':
                     javaHashBig = 31 * javaHashBig + byteRead;
+                    bigWord[bigWordLength] = byteRead;
                     bigWordLength++;
                     end = END_SMALL;
                     break;
                 default:
                     javaHashBig = 31 * javaHashBig + byteRead;
                     javaHashSmall = 31 * javaHashSmall + byteRead;
+                    smallWord[smallWordLength] = byteRead;
+                    bigWord[bigWordLength] = byteRead;
                     smallWordLength++;
                     bigWordLength++;
                     break;
