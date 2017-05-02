@@ -1,11 +1,13 @@
 package com.o2.cz.cip.hashseek.util;
 
-import java.io.UnsupportedEncodingException;
+import com.o2.cz.cip.hashseek.core.HashIndexer;
+
+import java.io.*;
 
 /**
  * Created by pavelnovotny on 07.03.14.
  */
-public class BlockSeekUtil {
+public class Utils {
 
     public static final int MAX_WORD_SIZE = 100;
 
@@ -19,9 +21,13 @@ public class BlockSeekUtil {
 
     public static int javaHash(String toBeHashed) throws UnsupportedEncodingException { //hashuje po bytech nikoliv po char, tj. je kompatibilni s BlockHashReader ktere je nezavisle od encoding
         byte[] bytes = toBeHashed.getBytes("UTF-8");
+        return javaHash(bytes);
+    }
+
+    public static int javaHash(byte[] word) {
         int hash = 0;
-        for (byte b: bytes) {
-            hash = 31 * hash + b;
+        for (int i=0; i< word.length; i++) {
+            hash = 31* hash + word[i];
         }
         return hash;
     }

@@ -1,4 +1,6 @@
-package com.o2.cz.cip.hashseek.core;
+package com.o2.cz.cip.hashseek.analyze.impl;
+
+import com.o2.cz.cip.hashseek.analyze.Analyzer;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -6,23 +8,23 @@ import java.util.Arrays;
 /**
  * Created by pavelnovotny on 24.04.17.
  */
-public class Analyzer {
+public class DefaultOldHashSeekAnalyzer implements Analyzer {
 
-    public static final int END_BIG = 0x01;
-    public static final int END_SMALL = 0x02;
-    public static final int END_ALL = END_BIG  | END_SMALL;
-    public static int MAX_WORD_LEN = 300;
-    public static int MAX_WORD_COUNT = 100000;
-    public int bytePosition = 0;
-    public byte[] document;
+    private static final int END_BIG = 0x01;
+    private static final int END_SMALL = 0x02;
+    private static final int END_ALL = END_BIG  | END_SMALL;
+    private static int MAX_WORD_LEN = 300;
+    private static int MAX_WORD_COUNT = 100000;
+    private int bytePosition = 0;
+    private byte[] document;
     private byte[] smallWord;
     private byte[] bigWord;
-    public int smallWordLength; //delka maleho slova
-    public int bigWordLength; //delka velkeho slova
+    private int smallWordLength; //delka maleho slova
+    private int bigWordLength; //delka velkeho slova
     private byte[][] words;
     int wordCount;
 
-    public Analyzer(byte[] document) throws IOException {
+    private void setDocument(byte[] document) {
         this.smallWord = new byte[MAX_WORD_LEN];
         this.bigWord = new byte[MAX_WORD_LEN];
         this.words = new byte[MAX_WORD_COUNT][];
@@ -33,7 +35,9 @@ public class Analyzer {
         this.wordCount = 0;
     }
 
-    public byte[][] analyze() {
+    @Override
+    public byte[][] analyze(byte[] document) {
+        setDocument(document);
         int end;
         while ((end = readWord()) > 0) {
             switch (end) {
@@ -65,7 +69,7 @@ public class Analyzer {
     }
 
 
-    public int readWord() {
+    private int readWord() {
         int end = 0;
         byte byteRead;
         smallWordLength =0;

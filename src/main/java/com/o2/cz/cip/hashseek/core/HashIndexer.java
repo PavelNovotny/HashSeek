@@ -1,8 +1,9 @@
 package com.o2.cz.cip.hashseek.core;
 
-import com.o2.cz.cip.hashseek.io.*;
+import com.o2.cz.cip.hashseek.analyze.Analyzer;
+import com.o2.cz.cip.hashseek.analyze.AnalyzerFactory;
 import com.o2.cz.cip.hashseek.io.RandomAccessFile;
-import com.o2.cz.cip.hashseek.util.BlockSeekUtil;
+import com.o2.cz.cip.hashseek.util.Utils;
 import org.apache.log4j.Logger;
 
 import java.io.*;
@@ -12,12 +13,12 @@ import java.util.*;
  * User: Pavel
  * Date: 20.3.13 10:52
  */
-public class BlockHashFileCreator {
+public class HashIndexer {
 
-    public static final int SORT_BUFFER_SIZE_IN_BYTES = 512*1024*1024; //0,5 GB
-    public static final int CUSTOM_BLOCKS_KIND = 1;
-    public static final int HASH_FILE_VERSION = 1;
-    public static final int FILE_HASH_WITH_POINTER_BUFFER_SIZE = SORT_BUFFER_SIZE_IN_BYTES/Long.SIZE*Byte.SIZE;
+    private static final int SORT_BUFFER_SIZE_IN_BYTES = 512*1024*1024; //0,5 GB
+    private static final int CUSTOM_BLOCKS_KIND = 1; //always, todo remove
+    private static final int HASH_FILE_VERSION = 1;
+    private static final int FILE_HASH_WITH_POINTER_BUFFER_SIZE = SORT_BUFFER_SIZE_IN_BYTES/Long.SIZE*Byte.SIZE;
     private long[] hashWithPointerBuffer;
     private int hashWithPointerBufferPosition;
     private int fileCounter;
@@ -25,13 +26,14 @@ public class BlockHashFileCreator {
     private static final int LONG_SIZE = Long.SIZE / Byte.SIZE;
     private String tempPlace = "./hash/";
     private String hashRawFileName = "hashRaw.hash";
-    private static Logger LOGGER = Logger.getLogger(BlockHashFileCreator.class);
+    private static Logger LOGGER = Logger.getLogger(HashIndexer.class);
 
-    public void resetFileCounter() {
+
+    private void resetFileCounter() {
         this.fileCounter = 0;
     }
 
-    public void allocateFileBuffer() {
+    private void allocateFileBuffer() {
         this.hashWithPointerBuffer = new long[FILE_HASH_WITH_POINTER_BUFFER_SIZE]; //alokuje maximalne SORT_BUFFER_SIZE_IN_BYTES
         resetFileBuffer();
     }
@@ -40,7 +42,7 @@ public class BlockHashFileCreator {
         this.hashWithPointerBuffer = null;
     }
 
-    public void resetFileBuffer() {
+    private void resetFileBuffer() {
         this.hashWithPointerBufferPosition = 0;
     }
 
@@ -81,24 +83,8 @@ public class BlockHashFileCreator {
         return hashSpaceSize;
     }
 
-    public long[] documentAddressArray(File blockFile) throws IOException {
-        int numberOfBlocks = (int)(blockFile.length() / LONG_SIZE);
-        DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(blockFile)));
-        long[] customBlocks = new long[numberOfBlocks];
-        int index = 0;
-        try {
-            while (true) {
-                long customBlockAddress = in.readLong();
-                customBlocks[index++] = customBlockAddress;
-            }
-        } catch (EOFException e) {
-        } finally {
-            in.close();
-        }
-        return customBlocks;
-    }
 
-    public void createHashFile(File fileToHash, File hashIndexFile, File blockFile) throws Exception {
+    public void createHashFile(File fileToHash, File resultHashFile, File blockFile, String analyzerKind) throws Exception {
         LOGGER.debug(String.format("started indexing '%s'.", fileToHash.getPath()));
         if (blockFile == null || !blockFile.exists()) {
             LOGGER.error(String.format("block file '%s' must exists. file '%s' was not indexed. .", blockFile.getPath(), fileToHash.getPath()));
@@ -106,12 +92,13 @@ public class BlockHashFileCreator {
         }
         allocateFileBuffer();
         long[] docsLoc = documentAddressArray(blockFile);
+        //todo analyzer zpropagovat až do indexu.
+        Analyzer analyzer = AnalyzerFactory.createAnalyzerInstance(analyzerKind);
         for (int docIndex=0; docIndex<docsLoc.length-1; docIndex++) {
             long start = docsLoc[docIndex];
             long end = docsLoc[docIndex+1];
             byte[] doc = DocumentReader.getDocument(fileToHash, start, end);
-            Analyzer analyzer = new Analyzer(doc);
-            byte[][] words = analyzer.analyze();
+            byte[][] words = analyzer.analyze(doc);
             writeToRawHashFile(words, docIndex);
         }
         writeSortedHashPart(); //posledni nemusí být úplně plný
@@ -120,7 +107,7 @@ public class BlockHashFileCreator {
         int newSpaceSize = mergeSortedFiles(integerSpaceFile);
         System.out.println(String.format("hash space size %s", newSpaceSize));
         normalizeHashSpace(newSpaceSize, integerSpaceFile);
-        writeFinalHashFile(hashIndexFile, blockFile, newSpaceSize);
+        writeFinalHashFile(resultHashFile, docsLoc, newSpaceSize);
     }
 
     private int normalizeHashSpace(int newSpaceSize, File oldSpaceFile) throws IOException { //účelem je přepočítat hashe na novou velikost a setřídit. Ve výsledku dostaneme k sobě hashe, které by byly na n-té pozici původní hash tabulky, kde n je nová velikost hash tabulky, tím pádem nepřijdeme o žádné pointry.
@@ -131,9 +118,9 @@ public class BlockHashFileCreator {
             while (true) {
                 long hashWithPointer = in.readLong();
                 int hashValue = (int) (hashWithPointer >>32);
-                hashValue = BlockSeekUtil.normalizeToHashSpace(hashValue, newSpaceSize);
+                hashValue = Utils.normalizeToHashSpace(hashValue, newSpaceSize);
                 int pointerValue = (int) (hashWithPointer);
-                this.hashWithPointerBuffer[hashWithPointerBufferPosition++] = BlockSeekUtil.makeLongFromTwoInts(hashValue, pointerValue);
+                this.hashWithPointerBuffer[hashWithPointerBufferPosition++] = Utils.makeLongFromTwoInts(hashValue, pointerValue);
                 if (hashWithPointerBufferPosition >= FILE_HASH_WITH_POINTER_BUFFER_SIZE) {
                     writeSortedHashPart();
                 }
@@ -151,7 +138,7 @@ public class BlockHashFileCreator {
         return newSpaceSize;
     }
 
-    private void writeFinalHashFile(File hashIdexFile, File blockFile, int hashSpace) throws IOException {
+    private void writeFinalHashFile(File hashIdexFile, long[] docLocations, int hashSpace) throws IOException {
         File normalizedSpaceFile = new File(String.format("%s/%s.%s",tempPlace, hashRawFileName, ".normalized"));
         RandomAccessFile hashRawSortedFile = new RandomAccessFile(normalizedSpaceFile,"r");
         if (hashIdexFile.exists()) {
@@ -171,18 +158,11 @@ public class BlockHashFileCreator {
         //zapíšeme o jaký typ bloku se jedná, a velikost bloku (pro fixed) nebo počet bloků (pro custom)
         int blockSize, blockKind;
         blockKind = CUSTOM_BLOCKS_KIND;
-        blockSize = (int)(blockFile.length() / LONG_SIZE);
+        blockSize = docLocations.length;
         filePointer += writeInt(finalHash, blockKind);//zda se používá se customBlocks (1), nebo fixedBlocks (2)
         filePointer += writeInt(finalHash, blockSize);//velikost customBlocks, popř počet bytů na block, v případě fixedBlocks
-        DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(blockFile)));
-        try {
-            while (true) {
-                long customBlockAddress = in.readLong();
-                filePointer += writeLong(finalHash, customBlockAddress);
-            }
-        } catch (EOFException e) {
-        } finally {
-            in.close();
+        for (int i=0;i<docLocations.length;i++) {
+            filePointer += writeLong(finalHash, docLocations[i]);
         }
         try {
             while (true) {
@@ -238,26 +218,18 @@ public class BlockHashFileCreator {
     }
 
     protected void writeToRawHashFile (int wordLength, int javaHash, int pointer) throws IOException {
-        if (wordLength < HashSeekConstants.MIN_WORD_SIZE || wordLength > BlockSeekUtil.MAX_WORD_SIZE) {
+        if (wordLength < HashSeekConstants.MIN_WORD_SIZE || wordLength > Utils.MAX_WORD_SIZE) {
             return;
         }
-        this.hashWithPointerBuffer[hashWithPointerBufferPosition++] = BlockSeekUtil.makeLongFromTwoInts(BlockSeekUtil.maskSign(javaHash), pointer);
+        this.hashWithPointerBuffer[hashWithPointerBufferPosition++] = Utils.makeLongFromTwoInts(Utils.maskSign(javaHash), pointer);
         if (hashWithPointerBufferPosition >= FILE_HASH_WITH_POINTER_BUFFER_SIZE) {
             writeSortedHashPart();
         }
     }
 
-    private int javaHash(byte[] word) {
-        int hash = 0;
-        for (int i=0; i< word.length; i++) {
-            hash = 31* hash + word[i];
-        }
-        return hash;
-    }
-
     protected void writeToRawHashFile (byte[][] words, int pointer) throws IOException {
         for (byte[] word : words) {
-            int javaHash = javaHash(word);
+            int javaHash = Utils.javaHash(word);
             writeToRawHashFile(word.length, javaHash, pointer);
         }
     }
@@ -274,9 +246,27 @@ public class BlockHashFileCreator {
         resetFileBuffer();
     }
 
+
+    public static long[] documentAddressArray(File docAddressesFile) throws IOException {
+        int numberOfDocs = (int)(docAddressesFile.length() / LONG_SIZE);
+        DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(docAddressesFile)));
+        long[] docAddressesArray = new long[numberOfDocs];
+        int index = 0;
+        try {
+            while (true) {
+                long customBlockAddress = in.readLong();
+                docAddressesArray[index++] = customBlockAddress;
+            }
+        } catch (EOFException e) {
+        } finally {
+            in.close();
+        }
+        return docAddressesArray;
+    }
+
     public static void main (String args[]) throws Exception {
-        BlockHashFileCreator blockHashFileCreator = new BlockHashFileCreator();
-        blockHashFileCreator.createHashFile(new File(args[0]), new File(args[1]), new File(args[2]));
+        HashIndexer hashIndexer = new HashIndexer();
+        hashIndexer.createHashFile(new File(args[0]), new File(args[1]), new File(args[2]), args[3]);
     }
 
 }
