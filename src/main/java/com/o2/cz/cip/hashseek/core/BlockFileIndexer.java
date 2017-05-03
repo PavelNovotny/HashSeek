@@ -22,7 +22,7 @@ public class BlockFileIndexer {
         this.sourceFile = sourceFile;
         String sourceFileName = sourceFile.getAbsolutePath();
         this.docAddresses = new File(sourceFileName+".blocks");
-        this.resultFile = null; //pouze indexujeme, zdrojový soubor s daty již existuje, není potřeba vytvářet nový.
+        this.resultFile = null; //pouze indexujeme, zdrojový soubor s daty již existuje, není potřeba vytvářet vedle nový.
         this.resultHashFile = new File(sourceFileName+".hash") ;
     }
 
@@ -34,16 +34,16 @@ public class BlockFileIndexer {
             return;
         }
         long[] docsLoc = documentAddressArray(docAddresses);
-        //todo analyzer zpropagovat až do indexu.
+        //todo analyzer zpropagovat až do indexu. V nové verzi indexu
         Analyzer analyzer = AnalyzerFactory.createAnalyzerInstance(analyzerKind);
         for (int docIndex=0; docIndex<docsLoc.length-1; docIndex++) {
             long start = docsLoc[docIndex];
             long end = docsLoc[docIndex+1];
             byte[] doc = DocumentReader.getDocument(sourceFile, start, end);
-            byte[][] words = analyzer.analyze(doc);
-            hashCreator.indexDocument(doc, words, docIndex);
+            byte[][] analyzed = analyzer.analyze(doc);
+            hashCreator.indexDocument(doc, analyzed);
         }
-        hashCreator.finalizeIndex(docsLoc);
+        hashCreator.finalizeIndex();
     }
 
     public static long[] documentAddressArray(File docAddressesFile) throws IOException {

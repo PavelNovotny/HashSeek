@@ -1,10 +1,7 @@
 package com.o2.cz.cip.hashseek.core;
 
-import com.o2.cz.cip.hashseek.analyze.Analyzer;
-import com.o2.cz.cip.hashseek.analyze.AnalyzerFactory;
 import com.o2.cz.cip.hashseek.io.RandomAccessFile;
 import com.o2.cz.cip.hashseek.util.Utils;
-import org.apache.log4j.Logger;
 
 import java.io.*;
 import java.util.*;
@@ -16,59 +13,108 @@ import java.util.*;
 public class HashIndexer {
 
     private static final int SORT_BUFFER_SIZE_IN_BYTES = 512*1024*1024; //0,5 GB
-    private static final int CUSTOM_BLOCKS_KIND = 1; //always, todo remove
+    private static final int CUSTOM_BLOCKS_KIND = 1; //always, todo remove in next index version
     private static final int HASH_FILE_VERSION = 1;
     private static final int FILE_HASH_WITH_POINTER_BUFFER_SIZE = SORT_BUFFER_SIZE_IN_BYTES/Long.SIZE*Byte.SIZE;
+    private static final int DOCPOSITIONS_ALLOCATE = 200000;
     private long[] hashWithPointerBuffer;
     private int hashWithPointerBufferPosition;
     private int fileCounter;
     private static final int INT_SIZE = Integer.SIZE / Byte.SIZE;
     public static final int LONG_SIZE = Long.SIZE / Byte.SIZE;
-    private String tempPlace = "./hash/";
-    private String hashRawFileName = "hashRaw.hash";
+    private String tempFolder = "./hash/";
+    private String tempFileName = "raw.hash";
     private File resultFile;
     private File resultHashFile;
+    private File docPositionFile;
+    private  long[] docPositions;
+    private  int docPositionsIndex;
+    private  int docNumber;
+    private long docEndPosition;
 
     public HashIndexer(File resultFile, File resultHashFile, String tempFolder, String rawFileName) {
         this.resultFile = resultFile;
         this.resultHashFile = resultHashFile;
-        this.tempPlace = tempFolder;
-        this.hashRawFileName = rawFileName;
-        //todo podívat se zda je potřeba.
-        allocateFileBuffer();
+        this.tempFolder = tempFolder;
+        this.tempFileName = rawFileName;
+        this.docNumber = 0;
+        this.docEndPosition = 0;
+        this.docPositionFile = new File(String.format("%s/%s.%s", tempFolder, tempFileName, "docpos"));
+        allocateBuffers();
     }
 
 
-    public void indexDocument(byte[] originalDoc, byte[][] analyzedDoc, int pointer) throws IOException {
-        for (byte[] word : analyzedDoc) { //todo pozor na autoboxing
+    public void indexDocument(byte[] originalDoc, byte[][] analyzedDoc) throws IOException {
+        for (int i=0; i<analyzedDoc.length; i++) {
+            byte[] word = analyzedDoc[i];
             int javaHash = Utils.javaHash(word);
-            writeToRawHashFile(word.length, javaHash, pointer);
+            writeToRawHashFile(word.length, javaHash, docNumber);
+        }
+        docNumber++;
+        docPositions[docPositionsIndex] = docEndPosition;
+        docEndPosition = docEndPosition + originalDoc.length;
+        docPositionsIndex++;
+        if (docPositionsIndex >= docPositions.length) {
+            DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(docPositionFile, true)));
+            for (int i=0; i< docPositions.length; i++) {
+                out.writeLong(docPositions[i]);
+            }
+            out.flush();
+            out.close();
+            docPositionsIndex = 0;
         }
         writeToResultFile(originalDoc);
     }
 
+    private long[] getDocLocations() throws IOException {
+        int storedNumberOfDocs = (int)(docPositionFile.length() / LONG_SIZE);
+        int totalNumberOfDocs = storedNumberOfDocs + docPositionsIndex + 1;
+        long[] docAddressesArray = new long[totalNumberOfDocs];
+        int index = 0;
+        if (docPositionFile.exists()) {
+            DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(docPositionFile)));
+            for (int i=0; i<storedNumberOfDocs; i++) {
+                long customBlockAddress = in.readLong();
+                docAddressesArray[index++] = customBlockAddress;
+            }
+            in.close();
+        }
+        for (int i=0; i<docPositionsIndex; i++) {
+            docAddressesArray[index++] = docPositions[i];
+        }
+        docAddressesArray[index++] = docEndPosition;
+        return docAddressesArray;
+    }
 
-    public void finalizeIndex(long[] docsLoc) throws IOException {
+
+    public void finalizeIndex() throws IOException {
+        long[] docsLoc = getDocLocations();
         writeSortedHashPart(); //posledni nemusí být úplně plný
         freeFileBuffer();
-        File integerSpaceFile = new File(String.format("%s/%s.sorted",tempPlace, hashRawFileName));
+        File integerSpaceFile = new File(String.format("%s/%s.sorted", tempFolder, tempFileName));
         int newSpaceSize = mergeSortedFiles(integerSpaceFile);
         System.out.println(String.format("hash space size %s", newSpaceSize));
         normalizeHashSpace(newSpaceSize, integerSpaceFile);
-        //todo pozice získat z raw indexu, nepoužívat pole pozic dokumentů (nejsou vždy k dispozici).
         writeFinalHashFile(resultHashFile, docsLoc, newSpaceSize);
+        //todo cleanup temporary files when finished
     }
 
-    private void writeToResultFile(byte[] doc) {
-        //todo implement
+    private void writeToResultFile(byte[] doc) throws IOException {
+        if (resultFile == null) return;
+        DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(resultFile, true)));
+        out.write(doc);
+        out.flush();
+        out.close();
     }
 
     private void resetFileCounter() {
         this.fileCounter = 0;
     }
 
-    private void allocateFileBuffer() {
+    private void allocateBuffers() {
         this.hashWithPointerBuffer = new long[FILE_HASH_WITH_POINTER_BUFFER_SIZE]; //alokuje maximalne SORT_BUFFER_SIZE_IN_BYTES
+        this.docPositions = new long[DOCPOSITIONS_ALLOCATE];
+        docPositionsIndex = 0;
         resetFileBuffer();
     }
 
@@ -90,7 +136,7 @@ public class HashIndexer {
             }
         });
         for (int i=0; i<fileCounter; i++) {
-            File sortedBufferFile = new File (String.format("%s/%s.%03d",tempPlace, hashRawFileName, i));
+            File sortedBufferFile = new File (String.format("%s/%s.%03d", tempFolder, tempFileName, i));
             MergeFileBuffer mergeFileBuffer = new MergeFileBuffer(mergeBufferSize, sortedBufferFile);
             mergeQueue.add(mergeFileBuffer);
         }
@@ -118,7 +164,7 @@ public class HashIndexer {
     }
 
     private int normalizeHashSpace(int newSpaceSize, File oldSpaceFile) throws IOException { //účelem je přepočítat hashe na novou velikost a setřídit. Ve výsledku dostaneme k sobě hashe, které by byly na n-té pozici původní hash tabulky, kde n je nová velikost hash tabulky, tím pádem nepřijdeme o žádné pointry.
-        allocateFileBuffer();
+        allocateBuffers();
         resetFileCounter();
         DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(oldSpaceFile)));
         try {
@@ -138,22 +184,22 @@ public class HashIndexer {
         }
         writeSortedHashPart(); //zapíšeme zbytek v bufferu
         freeFileBuffer();
-        File normalizedSpaceFile = new File(String.format("%s/%s.%s",tempPlace, hashRawFileName, "normalized"));
+        File normalizedSpaceFile = new File(String.format("%s/%s.%s", tempFolder, tempFileName, "normalized"));
         int spaceSize = mergeSortedFiles(normalizedSpaceFile);
         System.out.println(String.format("required hash space size %s", newSpaceSize));
         System.out.println(String.format("final hash space size %s", spaceSize));
         return newSpaceSize;
     }
 
-    private void writeFinalHashFile(File hashIdexFile, long[] docLocations, int hashSpace) throws IOException {
-        File normalizedSpaceFile = new File(String.format("%s/%s.%s",tempPlace, hashRawFileName, "normalized"));
+    private void writeFinalHashFile(File hashIndexFile, long[] docLocations, int hashSpace) throws IOException {
+        File normalizedSpaceFile = new File(String.format("%s/%s.%s", tempFolder, tempFileName, "normalized"));
         RandomAccessFile hashRawSortedFile = new RandomAccessFile(normalizedSpaceFile,"r");
-        if (hashIdexFile.exists()) {
-            hashIdexFile.delete();
+        if (hashIndexFile.exists()) {
+            hashIndexFile.delete();
         }
         long[] hashSpacePointers = new long[hashSpace];
         int[] hashSpaceValuesCount = new int[hashSpace];
-        DataOutputStream finalHash = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(hashIdexFile)));
+        DataOutputStream finalHash = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(hashIndexFile)));
         long filePointer = 0L;
         long longValue;
         int version = HASH_FILE_VERSION, hashValue, oldHashValue = 0, pointerValue; //verze hash indexu, pomocné proměnné
@@ -206,7 +252,7 @@ public class HashIndexer {
                 filePointer += writeInt(finalHash, hashSpaceValuesCount[i]);
             }
             finalHash.close();
-            java.io.RandomAccessFile finalHashRafw = new java.io.RandomAccessFile(hashIdexFile, "rw");
+            java.io.RandomAccessFile finalHashRafw = new java.io.RandomAccessFile(hashIndexFile, "rw");
             finalHashRafw.seek(INT_SIZE); //pozice za version
             finalHashRafw.writeLong(hashSpaceTablePosition);
             finalHashRafw.writeInt(hashSpace);
@@ -225,6 +271,7 @@ public class HashIndexer {
     }
 
     private void writeToRawHashFile (int wordLength, int javaHash, int pointer) throws IOException {
+        //todo, tuhle kontrolu odstranit (přemístit do BlockFileIndexer), tady indexujeme všechno.
         if (wordLength < HashSeekConstants.MIN_WORD_SIZE || wordLength > Utils.MAX_WORD_SIZE) {
             return;
         }
@@ -237,7 +284,7 @@ public class HashIndexer {
 
     private void writeSortedHashPart() throws IOException {
         Arrays.sort(hashWithPointerBuffer, 0, hashWithPointerBufferPosition); //quick sort, std. implementace v jave je ok, a pro tenhle ucel se hodi.
-        File hashRawFile = new File (String.format("%s/%s.%03d",tempPlace, hashRawFileName, fileCounter++));
+        File hashRawFile = new File (String.format("%s/%s.%03d", tempFolder, tempFileName, fileCounter++));
         DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(hashRawFile, false)));
         for (int i=0; i< hashWithPointerBufferPosition; i++) {
             out.writeLong(hashWithPointerBuffer[i]);
