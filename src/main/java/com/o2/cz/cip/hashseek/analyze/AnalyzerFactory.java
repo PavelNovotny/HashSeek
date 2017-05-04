@@ -7,11 +7,12 @@ import com.o2.cz.cip.hashseek.analyze.impl.DefaultOldHashSeekAnalyzer;
  */
 public class AnalyzerFactory {
 
-    public static Analyzer createAnalyzerInstance(String analyzer) {
+    public static Analyzer createInstance(String analyzer) {
         if ("DefaultOldHashSeekAnalyzer".equals(analyzer)) {
             return new DefaultOldHashSeekAnalyzer();
         } else {
             return new DefaultOldHashSeekAnalyzer();
+
         }
 
     }

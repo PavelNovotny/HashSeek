@@ -1,4 +1,4 @@
-package com.o2.cz.cip.hashseek.core;
+package com.o2.cz.cip.hashseek.indexer.core;
 
 import com.o2.cz.cip.hashseek.io.RandomAccessFile;
 import com.o2.cz.cip.hashseek.util.Utils;
@@ -24,17 +24,18 @@ public class HashIndexer {
     public static final int LONG_SIZE = Long.SIZE / Byte.SIZE;
     private String tempFolder = "./hash/";
     private String tempFileName = "raw.hash";
+    //todo abstrahovat úložiště dat pomocí rozhraní insert a extract dokument
     private File resultFile;
-    private File resultHashFile;
+    private File resultIndexFile;
     private File docPositionFile;
     private  long[] docPositions;
     private  int docPositionsIndex;
     private  int docNumber;
     private long docEndPosition;
 
-    public HashIndexer(File resultFile, File resultHashFile, String tempFolder, String rawFileName) {
+    public HashIndexer(File resultFile, File resultIndexFile, String tempFolder, String rawFileName) {
         this.resultFile = resultFile;
-        this.resultHashFile = resultHashFile;
+        this.resultIndexFile = resultIndexFile;
         this.tempFolder = tempFolder;
         this.tempFileName = rawFileName;
         this.docNumber = 0;
@@ -99,7 +100,7 @@ public class HashIndexer {
         int newSpaceSize = mergeSortedFiles(integerSpaceFile);
         System.out.println(String.format("hash space size %s", newSpaceSize));
         normalizeHashSpace(newSpaceSize, integerSpaceFile);
-        writeFinalHashFile(resultHashFile, docsLoc, newSpaceSize);
+        writeFinalHashFile(resultIndexFile, docsLoc, newSpaceSize);
         cleanupTemp();
     }
 
