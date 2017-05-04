@@ -2,6 +2,8 @@ package com.o2.cz.cip.hashseek.indexer;
 
 import com.o2.cz.cip.hashseek.analyze.Analyzer;
 import com.o2.cz.cip.hashseek.analyze.AnalyzerFactory;
+import com.o2.cz.cip.hashseek.datastore.InsertData;
+import com.o2.cz.cip.hashseek.datastore.InsertDataFactory;
 import com.o2.cz.cip.hashseek.indexer.core.HashIndexer;
 import org.apache.log4j.Logger;
 
@@ -16,7 +18,6 @@ public class BlockFileIndexer {
 
     private File sourceFile;
     private File docAddresses;
-    private File resultFile;
     private File resultHashFile;
 
     public BlockFileIndexer(File sourceFile) {
@@ -24,12 +25,11 @@ public class BlockFileIndexer {
         String sourceFileName = sourceFile.getAbsolutePath();
         //todo cleanup blocks file when finished
         this.docAddresses = new File(sourceFileName+".blocks");
-        this.resultFile = null; //pouze indexujeme, zdrojový soubor s daty již existuje, není potřeba vytvářet vedle nový.
         this.resultHashFile = new File(sourceFileName+".hash") ;
     }
 
-    public void indexFile(String analyzerKind) throws Exception {
-        HashIndexer hashCreator = new HashIndexer(resultFile, resultHashFile, "./hash", "hashRaw.hash");
+    public void index(String analyzerKind, String dataStoreKind) throws Exception {
+        HashIndexer hashCreator = new HashIndexer(resultHashFile, "./hash", "hashRaw.hash");
         LOGGER.debug(String.format("started indexing '%s'.", sourceFile.getPath()));
         if (docAddresses == null || !docAddresses.exists()) {
             LOGGER.error(String.format("block file '%s' must exists. file '%s' was not indexed. .", docAddresses.getPath(), sourceFile.getPath()));
@@ -38,12 +38,14 @@ public class BlockFileIndexer {
         long[] docsLoc = documentAddressArray(docAddresses);
         //todo analyzer zpropagovat až do indexu. V nové verzi indexu
         Analyzer analyzer = AnalyzerFactory.createInstance(analyzerKind);
+        //todo dataStore zpropagovat až do indexu. V nové verzi indexu
+        InsertData dataInsert = InsertDataFactory.createInstance(dataStoreKind);
+        dataInsert.setSourceFile(this.sourceFile);
         for (int docIndex=0; docIndex<docsLoc.length-1; docIndex++) {
             long start = docsLoc[docIndex];
             long end = docsLoc[docIndex+1];
             byte[] doc = getDocument(sourceFile, start, end);
-            byte[][] analyzed = analyzer.analyze(doc);
-            hashCreator.indexDocument(doc, analyzed);
+            hashCreator.indexDocument(doc, analyzer, dataInsert);
         }
         hashCreator.finalizeIndex();
     }
@@ -67,7 +69,7 @@ public class BlockFileIndexer {
 
     public static void main (String args[]) throws Exception { //fileToHash, analyzer
         BlockFileIndexer blockFileIndexer = new BlockFileIndexer(new File(args[0]));
-        blockFileIndexer.indexFile(args[1]);
+        blockFileIndexer.index(args[1], args[2]);
     }
 
     public static byte[] getDocument(File file, long start, long end) throws IOException {

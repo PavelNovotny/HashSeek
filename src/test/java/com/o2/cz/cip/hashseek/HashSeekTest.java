@@ -23,7 +23,7 @@ public class HashSeekTest {
         //File blockFile = null;
         Utils.outPrintLine("started testCreateIndex");
         BlockFileIndexer blockFileIndexer = new BlockFileIndexer(sourceFile);
-        blockFileIndexer.indexFile("DefaultOldHashSeekAnalyzer");
+        blockFileIndexer.index("DefaultOldHashSeekAnalyzer", "NoFileInsertData");
         Utils.outPrintLine("ended testCreateIndex");
     }
 
@@ -35,7 +35,6 @@ public class HashSeekTest {
         File docAddressFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.blocks");
         //File blockFile = null;
         Utils.outPrintLine("started testDocumentReader");
-        HashIndexer hashCreator = new HashIndexer(resultFile, resultHashFile, "./hash", "hashRaw.hash");
         long[] documentAddresses = BlockFileIndexer.documentAddressArray(docAddressFile);
         for (int index=0; index<documentAddresses.length-1; index++) {
             System.out.println("----------------------------------------------");
@@ -52,7 +51,6 @@ public class HashSeekTest {
         File docAddressFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.blocks");
         //File blockFile = null;
         PrintStream out = new PrintStream(new FileOutputStream("analyzer.txt"));
-        HashIndexer hashCreator = new HashIndexer(resultFile, resultHashFile, "./hash", "hashRaw.hash");
         long[] documentAddresses = BlockFileIndexer.documentAddressArray(docAddressFile);
         DefaultOldHashSeekAnalyzer analyzer = new DefaultOldHashSeekAnalyzer();
         for (int docIndex=0; docIndex<documentAddresses.length-1; docIndex++) {

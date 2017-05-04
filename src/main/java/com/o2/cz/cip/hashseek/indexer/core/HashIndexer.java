@@ -1,5 +1,7 @@
 package com.o2.cz.cip.hashseek.indexer.core;
 
+import com.o2.cz.cip.hashseek.analyze.Analyzer;
+import com.o2.cz.cip.hashseek.datastore.InsertData;
 import com.o2.cz.cip.hashseek.io.RandomAccessFile;
 import com.o2.cz.cip.hashseek.util.Utils;
 
@@ -24,8 +26,6 @@ public class HashIndexer {
     public static final int LONG_SIZE = Long.SIZE / Byte.SIZE;
     private String tempFolder = "./hash/";
     private String tempFileName = "raw.hash";
-    //todo abstrahovat úložiště dat pomocí rozhraní insert a extract dokument
-    private File resultFile;
     private File resultIndexFile;
     private File docPositionFile;
     private  long[] docPositions;
@@ -33,8 +33,7 @@ public class HashIndexer {
     private  int docNumber;
     private long docEndPosition;
 
-    public HashIndexer(File resultFile, File resultIndexFile, String tempFolder, String rawFileName) {
-        this.resultFile = resultFile;
+    public HashIndexer(File resultIndexFile, String tempFolder, String rawFileName) {
         this.resultIndexFile = resultIndexFile;
         this.tempFolder = tempFolder;
         this.tempFileName = rawFileName;
@@ -44,16 +43,16 @@ public class HashIndexer {
         allocateBuffers();
     }
 
-
-    public void indexDocument(byte[] originalDoc, byte[][] analyzedDoc) throws IOException {
+    public void indexDocument(byte[] originalDoc, Analyzer analyzer, InsertData dataInsert) throws IOException {
+        byte[][] analyzedDoc = analyzer.analyze(originalDoc);
         for (int i=0; i<analyzedDoc.length; i++) {
             byte[] word = analyzedDoc[i];
             int javaHash = Utils.javaHash(word);
             writeToRawHashFile(word.length, javaHash, docNumber);
         }
         docNumber++;
-        putDocLocation(originalDoc.length);
-        writeToResultFile(originalDoc);
+        int docLen = dataInsert.insertDocument(originalDoc);
+        putDocLocation(docLen);
     }
 
     private void putDocLocation(int documentLen) throws IOException {
@@ -122,14 +121,6 @@ public class HashIndexer {
         if (file != null && file.exists()) {
             file.delete();
         }
-    }
-
-    private void writeToResultFile(byte[] doc) throws IOException {
-        if (resultFile == null) return;
-        DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(resultFile, true)));
-        out.write(doc);
-        out.flush();
-        out.close();
     }
 
     private void resetFileCounter() {
