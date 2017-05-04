@@ -13,7 +13,6 @@ import java.util.Calendar;
 public class HashSeekConstants {
     static final Logger LOGGER= LoggerFactory.getLogger(HashSeekConstants.class);
 
-    public static final int MIN_WORD_SIZE = 5;
 
     private static Calendar current = Calendar.getInstance();
 

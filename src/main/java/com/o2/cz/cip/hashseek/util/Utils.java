@@ -9,7 +9,6 @@ import java.io.*;
  */
 public class Utils {
 
-    public static final int MAX_WORD_SIZE = 100;
 
     public static int normalizeToHashSpace(int javaHash, int hashSpace) {
         return javaHash % hashSpace;

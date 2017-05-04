@@ -15,6 +15,8 @@ public class DefaultOldHashSeekAnalyzer implements Analyzer {
     private static final int END_ALL = END_BIG  | END_SMALL;
     private static int MAX_WORD_LEN = 300;
     private static int MAX_WORD_COUNT = 100000;
+    private static final int MIN_WORD_SIZE = 5;
+    private static final int MAX_WORD_SIZE = 100;
     private int bytePosition = 0;
     private byte[] document;
     private byte[] smallWord;
@@ -59,9 +61,8 @@ public class DefaultOldHashSeekAnalyzer implements Analyzer {
     }
 
     private void copyWord(int len, byte[] word) {
-        if (len > 0) {
-            words[wordCount++] = Arrays.copyOf(word, len);
-        }
+        if (len < MIN_WORD_SIZE || len > MAX_WORD_SIZE)  return;
+        words[wordCount++] = Arrays.copyOf(word, len);
     }
 
     private byte read() {

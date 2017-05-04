@@ -110,8 +110,6 @@ public class HashIndexer {
                 sortedBufferFile.delete();
             }
         }
-        deleteFile(resultFile);
-        deleteFile(resultHashFile);
         deleteFile(docPositionFile);
         File normalizedSpaceFile = new File(String.format("%s/%s.%s", tempFolder, tempFileName, "normalized"));
         deleteFile(normalizedSpaceFile);
@@ -297,10 +295,6 @@ public class HashIndexer {
     }
 
     private void writeToRawHashFile (int wordLength, int javaHash, int pointer) throws IOException {
-        //todo, tuhle kontrolu odstranit (přemístit do BlockFileIndexer), tady indexujeme všechno.
-        if (wordLength < HashSeekConstants.MIN_WORD_SIZE || wordLength > Utils.MAX_WORD_SIZE) {
-            return;
-        }
         this.hashWithPointerBuffer[hashWithPointerBufferPosition++] = Utils.makeLongFromTwoInts(Utils.maskSign(javaHash), pointer);
         if (hashWithPointerBufferPosition >= FILE_HASH_WITH_POINTER_BUFFER_SIZE) {
             writeSortedHashPart();
