@@ -51,8 +51,13 @@ public class HashIndexer {
             writeToRawHashFile(word.length, javaHash, docNumber);
         }
         docNumber++;
+        putDocLocation(originalDoc.length);
+        writeToResultFile(originalDoc);
+    }
+
+    private void putDocLocation(int documentLen) throws IOException {
         docPositions[docPositionsIndex] = docEndPosition;
-        docEndPosition = docEndPosition + originalDoc.length;
+        docEndPosition = docEndPosition + documentLen;
         docPositionsIndex++;
         if (docPositionsIndex >= docPositions.length) {
             DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(docPositionFile, true)));
@@ -63,7 +68,6 @@ public class HashIndexer {
             out.close();
             docPositionsIndex = 0;
         }
-        writeToResultFile(originalDoc);
     }
 
     private long[] getDocLocations() throws IOException {
@@ -96,7 +100,29 @@ public class HashIndexer {
         System.out.println(String.format("hash space size %s", newSpaceSize));
         normalizeHashSpace(newSpaceSize, integerSpaceFile);
         writeFinalHashFile(resultHashFile, docsLoc, newSpaceSize);
-        //todo cleanup temporary files when finished
+        cleanupTemp();
+    }
+
+    private void cleanupTemp() {
+        for (int i=0; i<fileCounter; i++) {
+            File sortedBufferFile = new File (String.format("%s/%s.%03d", tempFolder, tempFileName, i));
+            if (sortedBufferFile.exists()) {
+                sortedBufferFile.delete();
+            }
+        }
+        deleteFile(resultFile);
+        deleteFile(resultHashFile);
+        deleteFile(docPositionFile);
+        File normalizedSpaceFile = new File(String.format("%s/%s.%s", tempFolder, tempFileName, "normalized"));
+        deleteFile(normalizedSpaceFile);
+        File integerSpaceFile = new File(String.format("%s/%s.sorted", tempFolder, tempFileName));
+        deleteFile(integerSpaceFile);
+    }
+
+    private void deleteFile(File file) {
+        if (file != null && file.exists()) {
+            file.delete();
+        }
     }
 
     private void writeToResultFile(byte[] doc) throws IOException {
