@@ -1,5 +1,6 @@
 package com.o2.cz.cip.hashseek.datastore;
 
+import com.o2.cz.cip.hashseek.datastore.impl.GzipFileInsertData;
 import com.o2.cz.cip.hashseek.datastore.impl.NoFileInsertData;
 import com.o2.cz.cip.hashseek.datastore.impl.PlainFileInsertData;
 
@@ -13,6 +14,8 @@ public class InsertDataFactory {
             return new PlainFileInsertData();
         } else if ("NoFileInsertData".equals(dataStore)) {
             return new NoFileInsertData();
+        } else if ("GzipFileInsertData".equals(dataStore)) {
+            return new GzipFileInsertData();
         } else {
             return null;
         }

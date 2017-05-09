@@ -13,7 +13,6 @@ public class PlainFileInsertData implements InsertData {
 
     @Override
     public int insertDocument(byte[] document) {
-        if (storeFile == null) return 0;
         try {
             DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(storeFile, true)));
             out.write(document);

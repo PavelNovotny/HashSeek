@@ -1,12 +1,18 @@
 package com.o2.cz.cip.hashseek;
 
 import com.o2.cz.cip.hashseek.analyze.impl.DefaultOldHashSeekAnalyzer;
+import com.o2.cz.cip.hashseek.datastore.ExtractData;
+import com.o2.cz.cip.hashseek.datastore.ExtractDataFactory;
+import com.o2.cz.cip.hashseek.datastore.InsertData;
+import com.o2.cz.cip.hashseek.datastore.InsertDataFactory;
 import com.o2.cz.cip.hashseek.indexer.BlockFileIndexer;
 import com.o2.cz.cip.hashseek.indexer.core.HashIndexer;
 import com.o2.cz.cip.hashseek.util.Utils;
 import org.junit.Test;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -25,6 +31,48 @@ public class HashSeekTest {
         BlockFileIndexer blockFileIndexer = new BlockFileIndexer(sourceFile);
         blockFileIndexer.index("DefaultOldHashSeekAnalyzer", "NoFileInsertData");
         Utils.outPrintLine("ended testCreateIndex");
+    }
+
+    @Test
+    public void testGzInsert() throws Exception {
+        File sourceFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19");
+        File resultFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.result");
+        File resultHashFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.hash");
+        File docAddressFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.blocks");
+        long[] documentAddresses = BlockFileIndexer.documentAddressArray(docAddressFile);
+        InsertData insertData = InsertDataFactory.createInstance("GzipFileInsertData");
+        insertData.setSourceFile(sourceFile);
+        for (int index=0; index<documentAddresses.length-1; index++) {
+            byte[] document = BlockFileIndexer.getDocument(sourceFile, documentAddresses[index], documentAddresses[index + 1]);
+            insertData.insertDocument(document);
+        }
+        Utils.outPrintLine("end");
+    }
+
+    @Test
+    public void testGzRead() throws Exception {
+        File sourceFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19");
+        File dataFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.dgz");
+        File resultFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.result");
+        File resultHashFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.hash");
+        File docAddressFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.blocks");
+        long[] documentAddresses = BlockFileIndexer.documentAddressArray(docAddressFile);
+        ExtractData extractData = ExtractDataFactory.createInstance("GzipFileExtractData");
+        extractData.setDataFile(dataFile);
+        InsertData insertData = InsertDataFactory.createInstance("GzipFileInsertData");
+        insertData.setSourceFile(sourceFile);
+        long[] gzDocAddresses = new long[documentAddresses.length];
+        for (int index=0; index<documentAddresses.length-1; index++) {
+            byte[] document = BlockFileIndexer.getDocument(sourceFile, documentAddresses[index], documentAddresses[index + 1]);
+            int gzLen = insertData.insertDocument(document);
+            gzDocAddresses[index+1] = gzDocAddresses[index]+gzLen;
+        }
+        for (int index=0; index<gzDocAddresses.length-1; index++) {
+            byte[] data = extractData.extractDocument(gzDocAddresses[index], gzDocAddresses[index + 1] - gzDocAddresses[index]);
+            System.out.println("---------------------------------");
+            System.out.println(new String(data));
+        }
+        Utils.outPrintLine("end");
     }
 
     @Test
