@@ -76,11 +76,11 @@ public class BlockSeek {
                     candidateBlocks.add(blockNumber);
                 }
             }
-            HashSeekConstants.outPrintLineSimple(output, String.format("Estimated real count for '%s' is '%s' in '%s'.", seekedString, candidateBlocks.size(), seekedFile.getAbsolutePath()));
+            outPrintLineSimple(output, String.format("Estimated real count for '%s' is '%s' in '%s'.", seekedString, candidateBlocks.size(), seekedFile.getAbsolutePath()));
         }
         Set<Integer> finalCandidate = intersectCandidates(candidateBlocksList);
         if (candidateBlocksList.size() > 0) {
-            HashSeekConstants.outPrintLineSimple(output, String.format("Estimated real count for AND condition is '%s' in '%s'.",  finalCandidate.size(),  seekedFile.getAbsolutePath()));
+            outPrintLineSimple(output, String.format("Estimated real count for AND condition is '%s' in '%s'.",  finalCandidate.size(),  seekedFile.getAbsolutePath()));
         }
         return finalCandidate;
     }
@@ -98,9 +98,9 @@ public class BlockSeek {
             }
         }
         if (candidates.size() > seekLimit) {
-            HashSeekConstants.outPrintLineSimple(output, String.format("Result of AND condition was REDUCED to '%s'.",  seekLimit));
+            outPrintLineSimple(output, String.format("Result of AND condition was REDUCED to '%s'.",  seekLimit));
         } else {
-            HashSeekConstants.outPrintLineSimple(output, String.format("Result of AND condition was NOT reduced, but further restrictions are possible."));
+            outPrintLineSimple(output, String.format("Result of AND condition was NOT reduced, but further restrictions are possible."));
         }
         return limitedCandidates;
     }
@@ -120,20 +120,12 @@ public class BlockSeek {
 
     private Map<Long, Integer> finalPositions(Set<Integer> finalLimitedCandidates, RandomAccessFile hashRaf, RandomAccessFile seekedRaf, List<String> andStrings, int blockKind, int fixedBlockSize, long customBlockTablePosition) throws IOException {
         Map<Long, Integer> finalPositions = new HashMap<Long, Integer>();
-        if (blockKind ==2) { //fixed blockseek
-            for (Integer blockNumber : finalLimitedCandidates) {
-                int blockSize = fixedBlockSize + BlockSeekUtil.MAX_WORD_SIZE;//přesah kvůli tomu, že u fixed bloků může být hledané slovo na hranici.
-                long position = (long) (blockNumber * fixedBlockSize);
-                finalPositions.put(position, blockSize);
-            }
-        } else if (blockKind ==1) { //custom blockseek
-            for (Integer blockNumber : finalLimitedCandidates) {
-                hashRaf.seek(customBlockTablePosition + (blockNumber * BlockSeekUtil.LONG_SIZE)); //zjištění pozice bloku v hledaném souboru
-                long blockPosition = hashRaf.readLong();
-                long nextBlockPosition = hashRaf.readLong();
-                int customBlockSize = (int)(nextBlockPosition - blockPosition); //bez přesahu, předpokládáme, že custom blok je inteligentně udělaný
-                finalPositions.put(blockPosition, customBlockSize);
-            }
+        for (Integer blockNumber : finalLimitedCandidates) {
+            hashRaf.seek(customBlockTablePosition + (blockNumber * BlockSeekUtil.LONG_SIZE)); //zjištění pozice bloku v hledaném souboru
+            long blockPosition = hashRaf.readLong();
+            long nextBlockPosition = hashRaf.readLong();
+            int customBlockSize = (int)(nextBlockPosition - blockPosition); //bez přesahu, předpokládáme, že custom blok je inteligentně udělaný
+            finalPositions.put(blockPosition, customBlockSize);
         }
         return finalPositions;
     }
@@ -154,6 +146,16 @@ public class BlockSeek {
             if (found) {
                 allPositions.put(position, blockSize);
             }
+        }
+    }
+
+    public static void outPrintLineSimple(PrintStream output, String line) {
+        LOGGER.info(line);
+        if(System.out==output){
+            LOGGER.info(line);
+        }else{
+            output.println(line);
+            output.flush();
         }
     }
 
