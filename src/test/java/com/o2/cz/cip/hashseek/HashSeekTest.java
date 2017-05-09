@@ -29,7 +29,8 @@ public class HashSeekTest {
         //File blockFile = null;
         Utils.outPrintLine("started testCreateIndex");
         BlockFileIndexer blockFileIndexer = new BlockFileIndexer(sourceFile);
-        blockFileIndexer.index("DefaultOldHashSeekAnalyzer", "NoFileInsertData");
+        //blockFileIndexer.index("DefaultOldHashSeekAnalyzer", "NoFileInsertData");
+        blockFileIndexer.index("DefaultOldHashSeekAnalyzer", "GzipFileInsertData");
         Utils.outPrintLine("ended testCreateIndex");
     }
 

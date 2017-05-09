@@ -180,6 +180,7 @@ public class HashIndexer {
     }
 
     private int normalizeHashSpace(int newSpaceSize, File oldSpaceFile) throws IOException { //účelem je přepočítat hashe na novou velikost a setřídit. Ve výsledku dostaneme k sobě hashe, které by byly na n-té pozici původní hash tabulky, kde n je nová velikost hash tabulky, tím pádem nepřijdeme o žádné pointry.
+        //todo je to nezbytné, alokovat?
         allocateBuffers();
         resetFileCounter();
         DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(oldSpaceFile)));
