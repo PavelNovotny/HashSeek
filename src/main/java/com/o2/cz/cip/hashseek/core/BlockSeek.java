@@ -1,15 +1,12 @@
 package com.o2.cz.cip.hashseek.core;
 
-import com.o2.cz.cip.hashseek.app.AppProperties;
-import com.o2.cz.cip.hashseek.io.BgzSeekableInputStream;
-import com.o2.cz.cip.hashseek.io.SeekableInputStream;
+import com.o2.cz.cip.hashseek.io.RandomAccessFile;
 import com.o2.cz.cip.hashseek.util.BlockSeekUtil;
 import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 /**
@@ -18,11 +15,11 @@ import java.util.*;
 public class BlockSeek {
     private static Logger LOGGER = Logger.getLogger(BlockSeek.class);
 
-    public Map<Long, Integer> seekForPositions(List<List<String>> seekedStrings, File seekedFile, int seekLimit, PrintStream output) throws IOException {
+    public Map<Long, Integer> seekForPositions(List<List<String>> seekedStrings,  File seekedFile, int seekLimit, PrintStream output) throws IOException {
         Map<Long, Integer> allPositions = new HashMap<Long, Integer>();
-        File hashDir= AppProperties.getHashDir(seekedFile.getParentFile());
-        SeekableInputStream hashRaf = new BgzSeekableInputStream(new File(hashDir,seekedFile.getName().concat(".hash_v1.bgz"))); //předpokládáme zabalený hash
-        SeekableInputStream seekedRaf = new BgzSeekableInputStream(seekedFile);
+        File hashFile = new File(seekedFile.getAbsolutePath()+".hash");
+        RandomAccessFile hashRaf = new RandomAccessFile(hashFile,"r");
+        RandomAccessFile seekedRaf = new RandomAccessFile(seekedFile, "r");
         hashRaf.readInt(); //version
         long hashSpacePosition = hashRaf.readLong();
         int hashSpace = hashRaf.readInt();
@@ -42,16 +39,18 @@ public class BlockSeek {
         return allPositions;
     }
 
-    public static void main(String[] args) throws UnsupportedEncodingException {
-        int hash = BlockSeekUtil.maskSign(BlockSeekUtil.javaHash("xmlnsalksdfj qwoeiq weqw efasklfd askfjasldfkj asdlkfasdf asdf"));
-        System.out.println(hash);
-        hash = BlockSeekUtil.javaHash("xmlnsalksdfj qwoeiq weqw efasklfd askfjasldfkj asdlkfasdf asdf");
-        System.out.println(hash);
-        int normalizedHash = BlockSeekUtil.normalizeToHashSpace(BlockSeekUtil.maskSign(BlockSeekUtil.javaHash("xmlnsalksdfj qwoeiq weqw efasklfd askfjasldfkj asdlkfasdf asdf")), 4960161); // plusové číslo
-        System.out.println(normalizedHash);
+    public static void main(String[] args) throws IOException {
+        List<List<String>> seekedStrings = new ArrayList<List<String>>();
+        List<String> andStrings = new ArrayList<String>();
+        andStrings.add("00000000000000000120700464");
+        seekedStrings.add(andStrings);
+        File seekFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19");
+        File indexFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.hash");
+        BlockSeek blockSeek = new BlockSeek();
+        Map<Long, Integer> positions = blockSeek.seekForPositions(seekedStrings, seekFile,  100, System.out);
     }
 
-    private Set<Integer> candidateBlocks(SeekableInputStream hashRaf, List<String> andSeekStrings, int hashSpace, long hashSpacePosition, int blockKind, int fixedBlockSize, PrintStream output, File seekedFile) throws IOException {
+    private Set<Integer> candidateBlocks(RandomAccessFile hashRaf, List<String> andSeekStrings, int hashSpace, long hashSpacePosition, int blockKind, int fixedBlockSize, PrintStream output, File seekedFile) throws IOException {
         List<Set<Integer>> candidateBlocksList = new LinkedList<Set<Integer>>();
         for (String seekedString : andSeekStrings) {
             int hash = BlockSeekUtil.normalizeToHashSpace(BlockSeekUtil.maskSign(BlockSeekUtil.javaHash(seekedString)), hashSpace); // plusové číslo
@@ -119,7 +118,7 @@ public class BlockSeek {
         return finalCandidate;
     }
 
-    private Map<Long, Integer> finalPositions(Set<Integer> finalLimitedCandidates, SeekableInputStream hashRaf, SeekableInputStream seekedRaf, List<String> andStrings, int blockKind, int fixedBlockSize, long customBlockTablePosition) throws IOException {
+    private Map<Long, Integer> finalPositions(Set<Integer> finalLimitedCandidates, RandomAccessFile hashRaf, RandomAccessFile seekedRaf, List<String> andStrings, int blockKind, int fixedBlockSize, long customBlockTablePosition) throws IOException {
         Map<Long, Integer> finalPositions = new HashMap<Long, Integer>();
         if (blockKind ==2) { //fixed blockseek
             for (Integer blockNumber : finalLimitedCandidates) {
@@ -139,7 +138,7 @@ public class BlockSeek {
         return finalPositions;
     }
 
-    private void verifyPositions(SeekableInputStream seekedRaf, List<String> andSeekStrings, Map<Long, Integer> allPositions, Map<Long, Integer> finalCandidates) throws IOException {
+    private void verifyPositions(RandomAccessFile seekedRaf, List<String> andSeekStrings, Map<Long, Integer> allPositions, Map<Long, Integer> finalCandidates) throws IOException {
         for (Long position : finalCandidates.keySet()) {
             seekedRaf.seek(position);
             Integer blockSize = finalCandidates.get(position);
