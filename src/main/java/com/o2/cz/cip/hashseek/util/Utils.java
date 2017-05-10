@@ -1,20 +1,23 @@
 package com.o2.cz.cip.hashseek.util;
 
-import com.o2.cz.cip.hashseek.core.BlockSeek;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.UnsupportedCharsetException;
-import java.util.logging.Logger;
+import java.io.*;
+import java.util.Calendar;
 
 /**
  * Created by pavelnovotny on 07.03.14.
  */
-public class BlockSeekUtil {
+public class Utils {
 
+
+    static final Logger LOGGER = LoggerFactory.getLogger(Utils.class);
+    private static Calendar current = Calendar.getInstance();
     public static final int INT_SIZE = Integer.SIZE / Byte.SIZE;
     public static final int LONG_SIZE = Long.SIZE / Byte.SIZE;
     public static final int MAX_WORD_SIZE = 100;
-    public static int HASH_SPACE_RECORD_SIZE = BlockSeekUtil.LONG_SIZE + BlockSeekUtil.INT_SIZE;
+    public static int HASH_SPACE_RECORD_SIZE = Utils.LONG_SIZE + Utils.INT_SIZE;
 
     public static int normalizeToHashSpace(int javaHash, int hashSpace) {
         return javaHash % hashSpace;
@@ -26,9 +29,13 @@ public class BlockSeekUtil {
 
     public static int javaHash(String toBeHashed) throws UnsupportedEncodingException { //hashuje po bytech nikoliv po char, tj. je kompatibilni s BlockHashReader ktere je nezavisle od encoding
         byte[] bytes = toBeHashed.getBytes("UTF-8");
+        return javaHash(bytes);
+    }
+
+    public static int javaHash(byte[] word) {
         int hash = 0;
-        for (byte b: bytes) {
-            hash = 31 * hash + b;
+        for (int i=0; i< word.length; i++) {
+            hash = 31* hash + word[i];
         }
         return hash;
     }
@@ -86,4 +93,20 @@ public class BlockSeekUtil {
     }
 
 
+    public static void outPrintLine(String line) {
+        outPrintLine(System.out,line);
+    }
+
+    public static void outPrintLine(PrintStream output, String line) {
+        if(System.out==output){
+            LOGGER.info(String.format("%s   %s", formatedDateTime(System.currentTimeMillis()), line));
+        }
+        output.println(String.format("%s   %s", formatedDateTime(System.currentTimeMillis()), line));
+        output.flush();
+    }
+
+    public static String formatedDateTime(long time) {
+        current.setTimeInMillis(time);
+        return String.format("%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS.%1$tL", current);
+    }
 }
