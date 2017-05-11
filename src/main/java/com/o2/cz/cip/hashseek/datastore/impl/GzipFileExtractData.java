@@ -41,4 +41,9 @@ public class GzipFileExtractData implements ExtractData {
     public void setDataFile(File dataFile) {
         this.dataFile = dataFile;
     }
+
+    @Override
+    public void close() {
+        //todo inicializace streamu do setDataFile a close streamu sem
+    }
 }

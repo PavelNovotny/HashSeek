@@ -75,10 +75,10 @@ public class DefaultOldHashSeekAnalyzer implements Analyzer {
         byte byteRead;
         smallWordLength =0;
         while (end == 0) {
-            byteRead = read();
-            if (bytePosition+1 > document.length) {
+            if (bytePosition == document.length) {
                 return 0;
             }
+            byteRead = read();
             if (byteRead >=0 && byteRead < 32) { //control vyfiltrujeme, utf-8 pustime dal.
                 end = END_ALL;
                 break;
@@ -179,6 +179,10 @@ public class DefaultOldHashSeekAnalyzer implements Analyzer {
                     bigWord[bigWordLength++]=byteRead;
                     smallWord[smallWordLength++]=byteRead;
                     break;
+            }
+            if (bytePosition == document.length) {
+                end = END_ALL;
+                break;
             }
         }
         return end;

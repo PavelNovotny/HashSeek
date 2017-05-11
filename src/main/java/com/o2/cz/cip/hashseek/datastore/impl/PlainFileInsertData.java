@@ -30,4 +30,9 @@ public class PlainFileInsertData implements InsertData {
         String sourceFileName = sourceFile.getAbsolutePath();
         this.storeFile = new File(sourceFileName + ".plain");
     }
+
+    @Override
+    public void close() {
+        //todo
+    }
 }

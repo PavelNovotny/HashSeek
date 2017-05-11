@@ -17,4 +17,9 @@ public class NoFileInsertData implements InsertData { //just keeps original file
     @Override
     public void setSourceFile(File sourceFile) {
     }
+
+    @Override
+    public void close() {
+        //todo
+    }
 }

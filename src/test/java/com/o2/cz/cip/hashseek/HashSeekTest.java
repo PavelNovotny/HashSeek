@@ -1,7 +1,7 @@
 package com.o2.cz.cip.hashseek;
 
 import com.o2.cz.cip.hashseek.analyze.impl.DefaultOldHashSeekAnalyzer;
-import com.o2.cz.cip.hashseek.seek.FileSeek;
+import com.o2.cz.cip.hashseek.seek.IndexSeek;
 import com.o2.cz.cip.hashseek.datastore.ExtractData;
 import com.o2.cz.cip.hashseek.datastore.ExtractDataFactory;
 import com.o2.cz.cip.hashseek.datastore.InsertData;
@@ -22,13 +22,13 @@ import java.util.Map;
  */
 public class HashSeekTest {
 
-    public void testSeek(String seekedString, File seekedFile) throws IOException {
-        FileSeek fileSeek = new FileSeek();
+    public void testOldSeek(String seekedString, File seekedFile, File hashFile) throws IOException {
+        IndexSeek indexSeek = new IndexSeek(hashFile, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
         List<List<String>> toSeek = new LinkedList<List<String>>();
         List<String> strings = new LinkedList<String>();
         toSeek.add(strings);
         strings.add(seekedString);
-        Map<Long, Integer> positions = fileSeek.rawDocLocations(toSeek, seekedFile, 100, System.out); //pozice a délka
+        Map<Long, Integer> positions = indexSeek.rawDocLocations(toSeek, seekedFile, 100, System.out); //pozice a délka
         RandomAccessFile raf = new RandomAccessFile(seekedFile, "r");
         byte[] seekedBytes = seekedString.getBytes();
         for (Long position : positions.keySet()) { //některé jsou falešné (kolizní), ale alespoň jedna tam musí být.
@@ -42,9 +42,25 @@ public class HashSeekTest {
     }
 
     @Test
+    public void testOldSeek() throws IOException {
+        File file = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19");
+        File hashFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.hash");
+        testOldSeek("00000000000000000120693868", file, hashFile);
+    }
+
+    @Test
     public void testNewSeek() throws IOException {
         File file = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19");
-        testSeek("00000000000000000120700486", file);
+        File hashFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.hash");
+        //testNewSeek("000000000000120736038</id><userId>MNP_Server</use", file, hashFile);
+        testNewSeek("Default (self-tuning)',5,Pooled Threads};7aadecf70000015a13a6e6c9ffffc2ea;generated-r1-iyypepvv-1s6h;ProxyService$CrmMNPManagementSimple$2", file, hashFile);
+        testNewSeek("isdn><number>+420724582681</numb", file, hashFile);
+        //testNewSeek("<mnp:BlMsisdnVerified xmlns:mnp=\"http://schemas.eurotel.cz/mnp\"><id>MNP:00000000000000000120734659</id><userId>MNP_Server</userId><transactionId>42</transactionId><spId>232</spId><msisdn><number>+420773499604</number></msisdn></mnp:BlMsisdnVerified>", file, hashFile);
+    }
+
+    public void testNewSeek(String seekString, File seekedFile, File hashFile) throws IOException {
+        IndexSeek indexSeek = new IndexSeek(hashFile, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
+        Map<Long, Integer> positions = indexSeek.seek(seekString); //pozice a délka
     }
 
     @Test

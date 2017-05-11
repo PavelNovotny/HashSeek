@@ -33,4 +33,9 @@ public class GzipFileInsertData implements InsertData {
         String sourceFileName = sourceFile.getAbsolutePath();
         this.storeFile = new File(sourceFileName + ".dgz");
     }
+
+    @Override
+    public void close() {
+        //todo inicializace streamu do setSourceFile a close streamu sem
+    }
 }

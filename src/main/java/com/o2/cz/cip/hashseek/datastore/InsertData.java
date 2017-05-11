@@ -9,4 +9,5 @@ public interface InsertData {
     //we can do various staff with documents (compress, encrypt, etc...)
     public abstract int insertDocument(byte[] document); //store document and returns new document size
     public abstract void setSourceFile(File sourceFile); //na jeho zaklade urcime storeFile
+    public abstract void close();
 }

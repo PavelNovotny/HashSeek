@@ -5,6 +5,6 @@ package com.o2.cz.cip.hashseek.analyze;
  */
 public interface Analyzer {
 
-    public abstract byte[][] analyze(byte[] document);
+    public abstract byte[][] analyze(byte[] data);
 
 }
