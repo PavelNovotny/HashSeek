@@ -7,6 +7,8 @@ import com.o2.cz.cip.hashseek.datastore.ExtractDataFactory;
 import com.o2.cz.cip.hashseek.io.RandomAccessFile;
 import com.o2.cz.cip.hashseek.util.Utils;
 import org.apache.log4j.Logger;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -17,9 +19,9 @@ import java.util.*;
 /**
  * Created by pavelnovotny on 07.03.14.
  */
-public class IndexSeek {
+public class Seek {
     //todo best score
-    private static Logger LOGGER = Logger.getLogger(IndexSeek.class);
+    private static Logger LOGGER = Logger.getLogger(Seek.class);
     private File dataFile;
     private File indexFile;
     private int seekLimit;
@@ -27,7 +29,11 @@ public class IndexSeek {
     private Analyzer analyzer;
     private List<String> seekStrings;
 
-    public IndexSeek(File indexFile, String dataStoreKind, String analyzerKind, int seekLimit) throws FileNotFoundException {
+    //todo json výstup
+    //todo REST dotaz
+    //todo pro highlight předávat hodnoty analyzed.
+
+    public Seek(File indexFile, String dataStoreKind, String analyzerKind, int seekLimit) throws FileNotFoundException {
         this.indexFile = indexFile;
         //todo lepší zjištění datového souboru (z indexu?)
         String indexFilePath = indexFile.getAbsolutePath();
@@ -39,8 +45,7 @@ public class IndexSeek {
         this.analyzer = AnalyzerFactory.createInstance(analyzerKind);
     }
 
-    public Map<Long, Integer> seek (String seekString) throws IOException {
-        Map<Long, Integer> allPositions = new HashMap<Long, Integer>();
+    public List<DataDocument> seek (String seekString) throws IOException {
         RandomAccessFile hashRaf = new RandomAccessFile(indexFile,"r");
         hashRaf.readInt(); //version
         long hashSpacePosition = hashRaf.readLong();
@@ -52,17 +57,44 @@ public class IndexSeek {
         byte[][] analyzed = analyzer.analyze(seekString.getBytes("UTF-8"));
         Map<Integer, IndexDocument> indexDocuments =  indexDocuments(hashRaf, analyzed, hashSpace, hashSpacePosition);
         List<DataDocument> scoredDocuments = computeScore(indexDocuments, hashRaf, analyzed, customBlockTablePosition);
+        List<DataDocument> resultDocuments = filterFinal(scoredDocuments, analyzed);
+        createJSON();
+        hashRaf.close();
+        return resultDocuments;
+    }
+
+    public JSONObject result(String seekString) throws IOException {
+        List<DataDocument> documents = seek(seekString);
+        JSONObject obj=new JSONObject();
+        JSONArray array = new JSONArray();
+        for (DataDocument document : documents) {
+            array.add(document.getJSON());
+        }
+        obj.put("result",array);
+        System.out.println(obj.toString());
+        return obj;
+    }
+
+    private List<DataDocument> filterFinal(List<DataDocument> scoredDocuments, byte[][] analyzed) {
+        List<DataDocument> documents = new ArrayList<DataDocument>();
         int score = 0;
         for (DataDocument dataDocument : scoredDocuments) {
             if (dataDocument.getScore() < score) {
                 break;
             }
             score = dataDocument.getScore();
-            System.out.println(String.format("score:%s", score));
+            documents.add(dataDocument);
+            System.out.println(String.format("score:%02d%%", 100*score/analyzed.length));
             System.out.println(new String(dataDocument.getDocument()));
         }
-        hashRaf.close();
-        return allPositions;
+        return documents;
+    }
+
+    private JSONObject createJSON() {
+        JSONObject obj=new JSONObject(); obj.put("name","foo"); obj.put("num",new Integer(100)); obj.put("balance",new Double(1000.21));
+        obj.put("is_vip",new Boolean(true)); obj.put("nickname",null); System.out.print(obj);
+        System.out.println(obj.toString());
+        return obj;
     }
 
     private List<DataDocument> computeScore(Map<Integer, IndexDocument> fileDocuments, RandomAccessFile hashRaf, byte[][] analyzed, long customBlockTablePosition) throws IOException {

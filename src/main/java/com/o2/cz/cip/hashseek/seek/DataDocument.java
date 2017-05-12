@@ -1,5 +1,8 @@
 package com.o2.cz.cip.hashseek.seek;
 
+import org.json.simple.JSONObject;
+
+import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -32,5 +35,11 @@ public class DataDocument implements Comparable {
         return document;
     }
 
+    public JSONObject getJSON () throws UnsupportedEncodingException {
+        JSONObject obj = new JSONObject();
+        obj.put("score", score);
+        obj.put("document", new String(document, "UTF-8"));
+        return obj;
+    }
 
 }
