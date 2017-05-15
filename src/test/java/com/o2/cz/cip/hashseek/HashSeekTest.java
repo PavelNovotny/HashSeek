@@ -1,15 +1,15 @@
 package com.o2.cz.cip.hashseek;
 
-import com.o2.cz.cip.hashseek.analyze.impl.DefaultOldHashSeekAnalyzer;
-import com.o2.cz.cip.hashseek.seek.DataDocument;
-import com.o2.cz.cip.hashseek.seek.Seek;
-import com.o2.cz.cip.hashseek.datastore.ExtractData;
-import com.o2.cz.cip.hashseek.datastore.ExtractDataFactory;
-import com.o2.cz.cip.hashseek.datastore.InsertData;
-import com.o2.cz.cip.hashseek.datastore.InsertDataFactory;
-import com.o2.cz.cip.hashseek.indexer.BlockFileIndexer;
-import com.o2.cz.cip.hashseek.io.RandomAccessFile;
-import com.o2.cz.cip.hashseek.util.Utils;
+import com.o2.cz.cip.hashseek.common.analyze.impl.DefaultOldHashSeekAnalyzer;
+import com.o2.cz.cip.hashseek.common.seek.DataDocument;
+import com.o2.cz.cip.hashseek.common.seek.SeekIndexFile;
+import com.o2.cz.cip.hashseek.common.datastore.ExtractData;
+import com.o2.cz.cip.hashseek.common.datastore.ExtractDataFactory;
+import com.o2.cz.cip.hashseek.common.datastore.InsertData;
+import com.o2.cz.cip.hashseek.common.datastore.InsertDataFactory;
+import com.o2.cz.cip.hashseek.common.indexer.BlockFileIndexer;
+import com.o2.cz.cip.hashseek.common.io.RandomAccessFile;
+import com.o2.cz.cip.hashseek.common.util.Utils;
 import org.junit.Test;
 
 import java.io.*;
@@ -24,12 +24,12 @@ import java.util.Map;
 public class HashSeekTest {
 
     public void testOldSeek(String seekedString, File seekedFile, File hashFile) throws IOException {
-        Seek seek = new Seek(hashFile, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
+        SeekIndexFile seekIndexFile = new SeekIndexFile(hashFile, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
         List<List<String>> toSeek = new LinkedList<List<String>>();
         List<String> strings = new LinkedList<String>();
         toSeek.add(strings);
         strings.add(seekedString);
-        Map<Long, Integer> positions = seek.rawDocLocations(toSeek, seekedFile, 100, System.out); //pozice a délka
+        Map<Long, Integer> positions = seekIndexFile.rawDocLocations(toSeek, seekedFile, 100, System.out); //pozice a délka
         RandomAccessFile raf = new RandomAccessFile(seekedFile, "r");
         byte[] seekedBytes = seekedString.getBytes();
         for (Long position : positions.keySet()) { //některé jsou falešné (kolizní), ale alespoň jedna tam musí být.
@@ -61,16 +61,17 @@ public class HashSeekTest {
     }
 
     public void testNewSeek(String seekString, File seekedFile, File hashFile) throws IOException {
-        Seek seek = new Seek(hashFile, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
-        List<DataDocument> documents = seek.seek(seekString); //pozice a délka
+        SeekIndexFile seekIndexFile = new SeekIndexFile(hashFile, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
+        List<DataDocument> documents = seekIndexFile.seek(seekString); //pozice a délka
     }
 
     @Test
     public void testJSON() throws IOException {
         File file = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.hash");
-        Seek seek = new Seek(file, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
+        SeekIndexFile seekIndexFile = new SeekIndexFile(file, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
         String seekString = "<mnp:BlMsisdnVefie xmlns:mnp=\"http://schemas.eurotel.cz/mnp\"><id>MNP:0000000000000000120734659</id><userId>MNP_Server</userId><transactionId>42</transactionId><spId>232</spId><msisdn><number>+42077349604</number></msisdn></mnp:BlMsisdnVerified>";
-        seek.result(seekString);
+
+        seekIndexFile.seek(seekString);
     }
 
     @Test
