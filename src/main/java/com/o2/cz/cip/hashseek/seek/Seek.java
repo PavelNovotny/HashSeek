@@ -28,6 +28,7 @@ public class Seek {
     private ExtractData extractData;
     private Analyzer analyzer;
     private List<String> seekStrings;
+    private byte[][] analyzed;
 
     //todo json výstup
     //todo REST dotaz
@@ -54,11 +55,10 @@ public class Seek {
         int blockKind = hashRaf.readInt(); //custom block or fixedBlocks
         int fixedBlockSize = hashRaf.readInt(); //in case fixedSize number of bytes per block, in case of customBlock is not needed
         long customBlockTablePosition = hashRaf.getFilePointer();
-        byte[][] analyzed = analyzer.analyze(seekString.getBytes("UTF-8"));
-        Map<Integer, IndexDocument> indexDocuments =  indexDocuments(hashRaf, analyzed, hashSpace, hashSpacePosition);
-        List<DataDocument> scoredDocuments = computeScore(indexDocuments, hashRaf, analyzed, customBlockTablePosition);
-        List<DataDocument> resultDocuments = filterFinal(scoredDocuments, analyzed);
-        createJSON();
+        this.analyzed = analyzer.analyze(seekString.getBytes("UTF-8"));
+        Map<Integer, IndexDocument> indexDocuments =  indexDocuments(hashRaf, hashSpace, hashSpacePosition);
+        List<DataDocument> scoredDocuments = computeScore(indexDocuments, hashRaf, customBlockTablePosition);
+        List<DataDocument> resultDocuments = filterFinal(scoredDocuments);
         hashRaf.close();
         return resultDocuments;
     }
@@ -66,16 +66,21 @@ public class Seek {
     public JSONObject result(String seekString) throws IOException {
         List<DataDocument> documents = seek(seekString);
         JSONObject obj=new JSONObject();
-        JSONArray array = new JSONArray();
+        JSONArray documentsJSON = new JSONArray();
+        JSONArray analyzedJSON = new JSONArray();
         for (DataDocument document : documents) {
-            array.add(document.getJSON());
+            documentsJSON.add(document.getJSON());
         }
-        obj.put("result",array);
+        for (byte[] word : this.analyzed) {
+            analyzedJSON.add(new String(word));
+        }
+        obj.put("documents",documentsJSON);
+        obj.put("analyzed", analyzedJSON);
         System.out.println(obj.toString());
         return obj;
     }
 
-    private List<DataDocument> filterFinal(List<DataDocument> scoredDocuments, byte[][] analyzed) {
+    private List<DataDocument> filterFinal(List<DataDocument> scoredDocuments) {
         List<DataDocument> documents = new ArrayList<DataDocument>();
         int score = 0;
         for (DataDocument dataDocument : scoredDocuments) {
@@ -84,20 +89,14 @@ public class Seek {
             }
             score = dataDocument.getScore();
             documents.add(dataDocument);
-            System.out.println(String.format("score:%02d%%", 100*score/analyzed.length));
+            System.out.println(String.format("score:%02d%%", this.analyzed.length));
             System.out.println(new String(dataDocument.getDocument()));
         }
         return documents;
     }
 
-    private JSONObject createJSON() {
-        JSONObject obj=new JSONObject(); obj.put("name","foo"); obj.put("num",new Integer(100)); obj.put("balance",new Double(1000.21));
-        obj.put("is_vip",new Boolean(true)); obj.put("nickname",null); System.out.print(obj);
-        System.out.println(obj.toString());
-        return obj;
-    }
 
-    private List<DataDocument> computeScore(Map<Integer, IndexDocument> fileDocuments, RandomAccessFile hashRaf, byte[][] analyzed, long customBlockTablePosition) throws IOException {
+    private List<DataDocument> computeScore(Map<Integer, IndexDocument> fileDocuments, RandomAccessFile hashRaf, long customBlockTablePosition) throws IOException {
         RandomAccessFile dataRaf = new RandomAccessFile(dataFile,"r");
         List<DataDocument> dataDocumentList = new ArrayList<DataDocument>();
         List<IndexDocument> indexDocumentList = new ArrayList<IndexDocument>();
@@ -113,8 +112,8 @@ public class Seek {
             dataRaf.seek(docOffset);
             byte[] data = dataRaf.readRawBytes(docSize);
             int score = 0;
-            for (int i=0; i<analyzed.length; i++) {
-                byte[] word = analyzed[i];
+            for (int i=0; i<this.analyzed.length; i++) {
+                byte[] word = this.analyzed[i];
                 if (Utils.indexOf(data, word) > -1) { //hledané slovo je opravdu v dokumentu
                     score++;
                 }
@@ -130,10 +129,10 @@ public class Seek {
         return dataDocumentList;
     }
 
-    private Map<Integer, IndexDocument> indexDocuments(RandomAccessFile hashRaf, byte[][] analyzed, int hashSpace, long hashSpacePosition) throws IOException {
+    private Map<Integer, IndexDocument> indexDocuments(RandomAccessFile hashRaf, int hashSpace, long hashSpacePosition) throws IOException {
         Map<Integer, IndexDocument> fileDocuments = new HashMap<Integer, IndexDocument>();
-        for (int i=0; i<analyzed.length;i++) {
-            byte[] word = analyzed[i];
+        for (int i=0; i<this.analyzed.length;i++) {
+            byte[] word = this.analyzed[i];
             int hash = Utils.normalizeToHashSpace(Utils.maskSign(Utils.javaHash(word)), hashSpace); // plusové číslo
             hashRaf.seek(hashSpacePosition + (hash * Utils.HASH_SPACE_RECORD_SIZE));
             long docsOffset = hashRaf.readLong(); //pozice dokumentů ke slovu

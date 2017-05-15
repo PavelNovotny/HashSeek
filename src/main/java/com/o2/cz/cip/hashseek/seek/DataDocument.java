@@ -37,7 +37,7 @@ public class DataDocument implements Comparable {
 
     public JSONObject getJSON () throws UnsupportedEncodingException {
         JSONObject obj = new JSONObject();
-        obj.put("score", score);
+        obj.put("score", this.score);
         obj.put("document", new String(document, "UTF-8"));
         return obj;
     }

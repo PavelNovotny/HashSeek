@@ -56,8 +56,8 @@ public class HashSeekTest {
         //testNewSeek("000000000000120736038</id><userId>MNP_Server</use", file, hashFile);
         //testNewSeek("Default (self-tuning)',5,Pooled Threads};7aadecf70000015a13a6e6c9ffffc2ea;generated-r1-iyypepvv-1s6h;ProxyService$CrmMNPManagementSimple$2", file, hashFile);
         //testNewSeek("isdn><number>+420724582681</numb", file, hashFile);
-        //testNewSeek("<mnp:BlMsisdnVerified xmlns:mnp=\"http://schemas.eurotel.cz/mnp\"><id>MNP:00000000000000000120734659</id><userId>MNP_Server</userId><transactionId>42</transactionId><spId>232</spId><msisdn><number>+420773499604</number></msisdn></mnp:BlMsisdnVerified>", file, hashFile);
-        testNewSeek("<mnp:BlMsisdnVerixied xmlns:mnp=\"http://scemas.eurotel.cz/mnp\"><id>MNP:000000000000000002073465</id><userd>MNP_Server</userId><transactionId>42</transactionId><spId>232</spId><msisdn><number>+420773499604</number></msisdn></mnp:BlMsisdnVerified>", file, hashFile);
+        testNewSeek("<mnp:BlMsisdnVerified xmlns:mnp=\"http://schemas.eurotel.cz/mnp\"><id>MNP:00000000000000000120734659</id><userId>MNP_Server</userId><transactionId>42</transactionId><spId>232</spId><msisdn><number>+420773499604</number></msisdn></mnp:BlMsisdnVerified>", file, hashFile);
+        //testNewSeek("<mnp:BlMsisdnVerixied xmlns:mnp=\"http://scemas.eurotel.cz/mnp\"><id>MNP:000000000000000002073465</id><userd>MNP_Server</userId><transactionId>42</transactionId><spId>232</spId><msisdn><number>+420773499604</number></msisdn></mnp:BlMsisdnVerified>", file, hashFile);
     }
 
     public void testNewSeek(String seekString, File seekedFile, File hashFile) throws IOException {
@@ -69,7 +69,8 @@ public class HashSeekTest {
     public void testJSON() throws IOException {
         File file = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.hash");
         Seek seek = new Seek(file, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
-        seek.result("<mnp:BlMsisdnVerixied xmlns:mnp=\"http://scemas.eurotel.cz/mnp\"><id>MNP:000000000000000002073465</id><userd>MNP_Server</userId><transactionId>42</transactionId><spId>232</spId><msisdn><number>+420773499604</number></msisdn></mnp:BlMsisdnVerified>");
+        String seekString = "<mnp:BlMsisdnVefie xmlns:mnp=\"http://schemas.eurotel.cz/mnp\"><id>MNP:0000000000000000120734659</id><userId>MNP_Server</userId><transactionId>42</transactionId><spId>232</spId><msisdn><number>+42077349604</number></msisdn></mnp:BlMsisdnVerified>";
+        seek.result(seekString);
     }
 
     @Test
