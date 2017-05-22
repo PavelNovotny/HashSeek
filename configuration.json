@@ -1,0 +1,35 @@
+{
+    "folders" : {
+        "e2e" : {
+            "data": [
+                "/Users/pavelnovotny/Downloads/hashSeekZkusData/e2e"
+            ],
+            "index": [
+                "/Users/pavelnovotny/Downloads/hashSeekZkusData/e2e"
+            ]
+        },
+        "maintest" : {
+            "data": [
+                "/Users/pavelnovotny/Downloads/hashSeekZkusData/e2e"
+            ],
+            "index": [
+                "/Users/pavelnovotny/Downloads/hashSeekZkusData/e2e"
+            ]
+        },
+        "production" : {
+            "data": [
+                "/Users/pavelnovotny/Downloads/hashSeekZkusData/e2e",
+                "/Users/pavelnovotny/Downloads/hashSeekZkusData/bpm-production"
+            ],
+            "index": [
+                "/Users/pavelnovotny/Downloads/hashSeekZkusData/e2e",
+                "/Users/pavelnovotny/Downloads/hashSeekZkusData/bpm-production"
+            ]
+        }
+    },
+    "indexPatterns" : {
+        "cip-audit" : "(other|jms|b2b)_s(\\d)_alsb_aspect.(audit)(.{date})(.\\d{2})?(.hash)$",
+        "cip-time" : "(other|jms|b2b)_s(\\d)_alsb_aspect.(time)(.{date})(.\\d{2})?(.hash)$",
+        "cip-bpm" : "(bpm)_s(\\d).log(.{date})(.\\d{2})?(.hash)$"
+    }
+}

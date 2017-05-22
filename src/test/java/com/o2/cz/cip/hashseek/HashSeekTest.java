@@ -1,8 +1,9 @@
 package com.o2.cz.cip.hashseek;
 
 import com.o2.cz.cip.hashseek.common.analyze.impl.DefaultOldHashSeekAnalyzer;
-import com.o2.cz.cip.hashseek.common.seek.DataDocument;
-import com.o2.cz.cip.hashseek.common.seek.SeekIndexFile;
+import com.o2.cz.cip.hashseek.common.seek.Document;
+import com.o2.cz.cip.hashseek.common.seek.OldSeek;
+import com.o2.cz.cip.hashseek.common.seek.SeekIndex;
 import com.o2.cz.cip.hashseek.common.datastore.ExtractData;
 import com.o2.cz.cip.hashseek.common.datastore.ExtractDataFactory;
 import com.o2.cz.cip.hashseek.common.datastore.InsertData;
@@ -24,7 +25,7 @@ import java.util.Map;
 public class HashSeekTest {
 
     public void testOldSeek(String seekedString, File seekedFile, File hashFile) throws IOException {
-        SeekIndexFile seekIndexFile = new SeekIndexFile(hashFile, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
+        OldSeek seekIndexFile = new OldSeek(hashFile, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
         List<List<String>> toSeek = new LinkedList<List<String>>();
         List<String> strings = new LinkedList<String>();
         toSeek.add(strings);
@@ -61,17 +62,17 @@ public class HashSeekTest {
     }
 
     public void testNewSeek(String seekString, File seekedFile, File hashFile) throws IOException {
-        SeekIndexFile seekIndexFile = new SeekIndexFile(hashFile, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
-        List<DataDocument> documents = seekIndexFile.seek(seekString); //pozice a délka
+        SeekIndex seekIndex = new SeekIndex(hashFile, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
+        List<Document> documents = seekIndex.seek(seekString); //pozice a délka
     }
 
     @Test
     public void testJSON() throws IOException {
         File file = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.hash");
-        SeekIndexFile seekIndexFile = new SeekIndexFile(file, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
+        SeekIndex seekIndex = new SeekIndex(file, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
         String seekString = "<mnp:BlMsisdnVefie xmlns:mnp=\"http://schemas.eurotel.cz/mnp\"><id>MNP:0000000000000000120734659</id><userId>MNP_Server</userId><transactionId>42</transactionId><spId>232</spId><msisdn><number>+42077349604</number></msisdn></mnp:BlMsisdnVerified>";
 
-        seekIndexFile.seek(seekString);
+        seekIndex.seek(seekString);
     }
 
     @Test

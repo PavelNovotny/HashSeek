@@ -17,9 +17,8 @@ import java.util.*;
 /**
  * Created by pavelnovotny on 07.03.14.
  */
-public class SeekIndexFile {
-    //todo best score
-    private static Logger LOGGER = Logger.getLogger(SeekIndexFile.class);
+public class OldSeek {
+    private static Logger LOGGER = Logger.getLogger(OldSeek.class);
     private File dataFile;
     private File indexFile;
     private int seekLimit;
@@ -28,123 +27,27 @@ public class SeekIndexFile {
     private List<String> seekStrings;
 
     private byte[][] analyzed;
+    private Set<String> analyzedSet = new HashSet<String>();
 
-    //todo json výstup
-    //todo REST dotaz
-    //todo pro highlight předávat hodnoty analyzed.
 
-    public SeekIndexFile(File indexFile, String dataStoreKind, String analyzerKind, int seekLimit) throws FileNotFoundException {
+    public OldSeek(File indexFile, String dataStoreKind, String analyzerKind, int seekLimit) throws FileNotFoundException {
         this.indexFile = indexFile;
-        //todo lepší zjištění datového souboru (z indexu?)
         String indexFilePath = indexFile.getAbsolutePath();
         this.dataFile = new File(indexFilePath.substring(0, indexFilePath.length()-5));
         this.seekLimit = seekLimit;
-        //todo možná vysunout a vytvářet instance mimo tuto třídu
         this.extractData = ExtractDataFactory.createInstance(dataStoreKind);
         this.extractData.setDataFile(this.dataFile);
         this.analyzer = AnalyzerFactory.createInstance(analyzerKind);
     }
 
-    public List<DataDocument> seek (String seekString) throws IOException {
-        RandomAccessFile hashRaf = new RandomAccessFile(indexFile,"r");
-        hashRaf.readInt(); //version
-        long hashSpacePosition = hashRaf.readLong();
-        int hashSpace = hashRaf.readInt();
-        //todo remove in future index versions
-        int blockKind = hashRaf.readInt(); //custom block or fixedBlocks
-        int fixedBlockSize = hashRaf.readInt(); //in case fixedSize number of bytes per block, in case of customBlock is not needed
-        long customBlockTablePosition = hashRaf.getFilePointer();
-        this.analyzed = analyzer.analyze(seekString.getBytes("UTF-8"));
-        Map<Integer, HashIndexDocument> indexDocuments =  indexDocuments(hashRaf, hashSpace, hashSpacePosition);
-        List<DataDocument> scoredDocuments = computeScore(indexDocuments, hashRaf, customBlockTablePosition);
-        List<DataDocument> resultDocuments = filterFinal(scoredDocuments);
-        hashRaf.close();
-        return resultDocuments;
-    }
-
-    private List<DataDocument> filterFinal(List<DataDocument> scoredDocuments) {
-        List<DataDocument> documents = new ArrayList<DataDocument>();
-        int score = 0;
-        for (DataDocument dataDocument : scoredDocuments) {
-            if (dataDocument.getScore() < score) {
-                break;
-            }
-            score = dataDocument.getScore();
-            documents.add(dataDocument);
-            System.out.println(String.format("score:%02d%%", 100*score/this.analyzed.length));
-            System.out.println(new String(dataDocument.getDocument()));
-        }
-        return documents;
-    }
-
-
-    private List<DataDocument> computeScore(Map<Integer, HashIndexDocument> fileDocuments, RandomAccessFile hashRaf, long customBlockTablePosition) throws IOException {
-        RandomAccessFile dataRaf = new RandomAccessFile(dataFile,"r");
-        List<DataDocument> dataDocumentList = new ArrayList<DataDocument>();
-        List<HashIndexDocument> hashIndexDocumentList = new ArrayList<HashIndexDocument>();
-        hashIndexDocumentList.addAll(fileDocuments.values());
-        Collections.sort(hashIndexDocumentList, Collections.reverseOrder()); //předběžný scoring na základě počtu hashů
-        //finální scoring - načteme documenty podle pořadí předběžného scoringu, spočítáme reálný scoring
-        int maxScore = 1;
-        for (HashIndexDocument hashIndexDocument : hashIndexDocumentList) {
-            hashRaf.seek(customBlockTablePosition + (hashIndexDocument.hashCode() * Utils.LONG_SIZE)); //zjištění pozice bloku v hledaném souboru
-            long docOffset = hashRaf.readLong();
-            long nextDocOffset = hashRaf.readLong();
-            int docSize = (int)(nextDocOffset - docOffset);
-            dataRaf.seek(docOffset);
-            byte[] data = dataRaf.readRawBytes(docSize);
-            int score = 0;
-            for (int i=0; i<this.analyzed.length; i++) {
-                byte[] word = this.analyzed[i];
-                if (Utils.indexOf(data, word) > -1) { //hledané slovo je opravdu v dokumentu
-                    score++;
-                }
-            }
-            if (score >= maxScore) { //vyzobeme pouze dokumenty s maximalním score
-                DataDocument dataDocument = new DataDocument(data, score);
-                dataDocumentList.add(dataDocument);
-                maxScore = score;
-            }
-        }
-        Collections.sort(dataDocumentList, Collections.reverseOrder());
-        dataRaf.close();
-        return dataDocumentList;
-    }
-
-    private Map<Integer, HashIndexDocument> indexDocuments(RandomAccessFile hashRaf, int hashSpace, long hashSpacePosition) throws IOException {
-        Map<Integer, HashIndexDocument> fileDocuments = new HashMap<Integer, HashIndexDocument>();
-        for (int i=0; i<this.analyzed.length;i++) {
-            byte[] word = this.analyzed[i];
-            int hash = Utils.normalizeToHashSpace(Utils.maskSign(Utils.javaHash(word)), hashSpace); // plusové číslo
-            hashRaf.seek(hashSpacePosition + (hash * Utils.HASH_SPACE_RECORD_SIZE));
-            long docsOffset = hashRaf.readLong(); //pozice dokumentů ke slovu
-            int docCount = hashRaf.readInt(); // počet dokumentů
-            docCount = docCount>500?500:docCount; //todo prověřit: docCount > 500 utínám, výsledek hledání by to nemělo ovlivnit, zajímají nás víc specifická slova
-            hashRaf.seek(docsOffset); //čísla dokumentů
-            for (int docNum = 0; docNum < docCount; docNum++) {
-                int indexDocNum = hashRaf.readInt(); //
-                HashIndexDocument hashIndexDocument = fileDocuments.get(indexDocNum);
-                if (hashIndexDocument == null) {
-                    hashIndexDocument = new HashIndexDocument(indexDocNum);
-                    fileDocuments.put(indexDocNum, hashIndexDocument);
-                }
-                hashIndexDocument.addWordHash(hash);
-            }
-        }
-        return fileDocuments;
-    }
-
     public Map<Long, Integer> rawDocLocations(List<List<String>> seekedStrings, File seekedFile, int seekLimit, PrintStream output) throws IOException {
         Map<Long, Integer> allPositions = new HashMap<Long, Integer>();
-        //todo introduce analyzer a datastore
-        //todo store info about source file into index (hashFile) and take parameter indexFile instead seekedFile in the method
         File hashFile = new File(seekedFile.getAbsolutePath()+".hash");
         RandomAccessFile hashRaf = new RandomAccessFile(hashFile,"r");
         RandomAccessFile seekedRaf = new RandomAccessFile(seekedFile, "r");
         hashRaf.readInt(); //version
         long hashSpacePosition = hashRaf.readLong();
         int hashSpace = hashRaf.readInt();
-        //todo remove in future index versions
         int blockKind = hashRaf.readInt(); //custom block or fixedBlocks
         int fixedBlockSize = hashRaf.readInt(); //in case fixedSize number of bytes per block, in case of customBlock is not needed
         long customBlockTablePosition = hashRaf.getFilePointer();
@@ -258,10 +161,5 @@ public class SeekIndexFile {
             output.flush();
         }
     }
-
-    public byte[][] getAnalyzed() {
-        return analyzed;
-    }
-
 
 }
