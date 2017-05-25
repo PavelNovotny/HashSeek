@@ -1,48 +1,41 @@
 package com.o2.cz.cip.hashseek.o2seek;
 
 import com.o2.cz.cip.hashseek.common.seek.Document;
+import com.o2.cz.cip.hashseek.common.seek.NotifyDocumentListener;
 import com.o2.cz.cip.hashseek.common.seek.SeekIndex;
+import com.o2.cz.cip.hashseek.common.seek.ThreadPool;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by pavelnovotny on 15.05.17.
  */
-public class O2Seek {
+public class O2Seek implements NotifyDocumentListener {
 
     public static ConfigurationDto conf;
+    private NotifyJSONListener jsonListener;
+    private int seekFilesCount;
 
-    public JSONObject seek(SeekParamsDto seekParams) throws IOException, java.text.ParseException {
+    public O2Seek(NotifyJSONListener jsonListener) {
+        this.jsonListener = jsonListener;
+    }
+
+    public void seek(SeekParamsDto seekParams) throws IOException, java.text.ParseException {
         Set<SeekFile> seekFiles = seekFiles(seekParams);
-        JSONObject obj=new JSONObject();
-        JSONArray results = new JSONArray();
-        obj.put("results",results);
+        seekFilesCount = seekFiles.size();
         for (SeekFile seekFile : seekFiles) {
-            //todo thread pool, každé hledání v souboru (SeekIndex) v samostatném vlákně. Jinak čekat, až se uvolní
-            SeekIndex seekIndex = new SeekIndex(seekFile.indexFile, seekFile.dataFile, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer");
-            List<Document> documents = seekIndex.seek(seekParams.getSeekString());
-            JSONObject result = new JSONObject();
-            JSONArray documentsJSON = new JSONArray();
-            JSONArray analyzedJSON = new JSONArray();
-            for (byte[] word : seekIndex.getAnalyzed()) {
-                analyzedJSON.add(new String(word));
+            Thread thread = ThreadPool.getThread();
+            SeekIndex seekIndex = ThreadPool.getSeekIndex(thread);
+            seekIndex.setNotifyListener(this);
+            seekIndex.setSeekParams(seekParams.getSeekString(), seekFile.indexFile, seekFile.dataFile, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer");
+            synchronized (seekIndex) {
+                seekIndex.notify();
             }
-            result.put("analyzed", analyzedJSON);
-            for (Document document : documents) {
-                documentsJSON.add(document.getJSON());
-            }
-            result.put("documents",documentsJSON);
-            results.add(result);
         }
-        System.out.println(obj.toString());
-        return obj;
     }
 
     private Set<SeekFile> seekFiles(final SeekParamsDto seekParams) throws java.text.ParseException {
@@ -99,12 +92,33 @@ public class O2Seek {
         long dateFrom = fileDateFormat.parse(from).getTime();
         long dateTo = fileDateFormat.parse(to).getTime();
         long diff = dateTo - dateFrom;
-        long days = TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
         for (long day = dateFrom; day <= dateTo; day+=hours24) {
             String date = fileDateFormat.format(new Date(day));
             seekDates.add(date);
         }
         return seekDates;
+    }
+
+    @Override
+    public synchronized void notifyResult(SeekIndex seekIndex) throws IOException {
+        List<Document> documents = seekIndex.getResult();
+        JSONObject result = new JSONObject();
+        JSONArray documentsJSON = new JSONArray();
+        JSONArray analyzedJSON = new JSONArray();
+        for (byte[] word : seekIndex.getAnalyzed()) {
+            analyzedJSON.add(new String(word));
+        }
+        result.put("analyzed", analyzedJSON);
+        for (Document document : documents) {
+            documentsJSON.add(document.getJSON());
+        }
+        result.put("documents",documentsJSON);
+        result.put("dataFile",new String(seekIndex.getDataFile().getAbsolutePath()));
+        this.jsonListener.notifyResult(result);
+        ThreadPool.finishThread(seekIndex);
+        if (--this.seekFilesCount <= 0) {
+            this.jsonListener.resultsFinished();
+        }
     }
 
     public class SeekFile {

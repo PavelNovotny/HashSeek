@@ -10,10 +10,10 @@
         },
         "maintest" : {
             "data": [
-                "/Users/pavelnovotny/Downloads/hashSeekZkusData/e2e"
+                "/Users/pavelnovotny/Downloads/hashSeekZkusData/maintest"
             ],
             "index": [
-                "/Users/pavelnovotny/Downloads/hashSeekZkusData/e2e"
+                "/Users/pavelnovotny/Downloads/hashSeekZkusData/maintest"
             ]
         },
         "production" : {

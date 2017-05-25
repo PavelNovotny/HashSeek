@@ -1,9 +1,11 @@
 package com.o2.cz.cip.hashseek.o2seek.http;
 
+import com.o2.cz.cip.hashseek.o2seek.NotifyJSONListener;
 import com.o2.cz.cip.hashseek.o2seek.O2Seek;
 import com.o2.cz.cip.hashseek.o2seek.SeekParamsDto;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -18,7 +20,7 @@ import java.util.*;
  * User: Pavel
  * Date: 29.9.12 12:20
  */
-class SeekHandler implements HttpHandler, Runnable {
+class SeekHandler implements HttpHandler, Runnable, NotifyJSONListener {
     static Logger loggerAccess= LoggerFactory.getLogger("hashseek.access");
     static  Logger LOGGER=LoggerFactory.getLogger(SeekHandler.class);
     
@@ -27,8 +29,10 @@ class SeekHandler implements HttpHandler, Runnable {
 	private SeekHandler activeChild;
 	private int numberOfThreads = 0;
 	private static int MAX_THREADS = 1;
+    private JSONObject result;
+    private JSONArray fileResults;
 
-	public void handle(HttpExchange exchange) throws IOException {
+    public void handle(HttpExchange exchange) throws IOException {
 		if (numberOfThreads < MAX_THREADS) {
 			numberOfThreads++;
 			SeekHandler seekHandler = new SeekHandler();
@@ -74,8 +78,6 @@ class SeekHandler implements HttpHandler, Runnable {
 	public void setNumberOfThreads(int numberOfThreads) {
 		this.numberOfThreads = numberOfThreads;
 	}
-
-
 
     private boolean notNum(String string) {
 		try {
@@ -131,9 +133,12 @@ class SeekHandler implements HttpHandler, Runnable {
 	}
 
 	public void run() {
-		OutputStream os = exchange.getResponseBody();
+        OutputStream os = exchange.getResponseBody();
         Writer writer = new OutputStreamWriter(os);
         StringBuffer buf = new StringBuffer();
+        this.result=new JSONObject();
+        this.fileResults = new JSONArray();
+        this.result.put("fileResults",fileResults);
 		try {
 			BufferedInputStream httpBin = new BufferedInputStream(exchange.getRequestBody());
 			while (httpBin.available() > 0 && buf.length() < 4096) { //zpracujeme max 4KB
@@ -144,7 +149,7 @@ class SeekHandler implements HttpHandler, Runnable {
 			System.out.println(String.format("Received query: '%s'", query));
 			exchange.sendResponseHeaders(200, 0);
             JSONObject par = (JSONObject) parseParams(buf);
-            seek(par, writer);
+            seek(par);
 		} catch (Exception e) {
             LOGGER.error(buf.toString());
             LOGGER.error("run",e);
@@ -157,24 +162,50 @@ class SeekHandler implements HttpHandler, Runnable {
                 LOGGER.error("run", e1);
             }
         } finally {
-            try {
-                writer.close();
-                os.close();
-            } catch (IOException e1) {
-                LOGGER.error("run-catch", e1);
-                e1.printStackTrace();
-            }
+            //todo zavírání v notifikaci - možná odstranit throws IOException
+            //try {
+            //    writer.close();
+            //    os.close();
+            //} catch (IOException e1) {
+            //    LOGGER.error("run-catch", e1);
+            //    e1.printStackTrace();
+            //}
 			parent.setNumberOfThreads(parent.getNumberOfThreads() - 1);
 		}
 	}
 
-    private void seek(JSONObject seekParam, Writer writer) throws IOException, ParseException, java.text.ParseException {
-        O2Seek o2seek = new O2Seek();
+    private void seek(JSONObject seekParam) throws IOException, ParseException, java.text.ParseException {
+        O2Seek o2seek = new O2Seek(this);
         SeekParamsDto seekParamsDto = new SeekParamsDto(seekParam);
-        o2seek.seek(seekParamsDto).writeJSONString(writer);
+        o2seek.seek(seekParamsDto);
     }
 
+    @Override
+    public void notifyResult(JSONObject jsonObject) {
+        this.fileResults.add(jsonObject);
+    }
 
+    @Override
+    public void resultsFinished() {
+        OutputStream os = exchange.getResponseBody();
+        Writer writer = new OutputStreamWriter(os);
+        try {
+            this.result.writeJSONString(writer);
+        } catch (IOException e) {
+            //todo
+            e.printStackTrace();
+        }
+        System.out.println(this.result.toString());
+        //todo lepší zavírání
+        try {
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            //todo
+            e.printStackTrace();
+        }
+
+    }
 
     private Object parseParams(StringBuffer buf) throws ParseException {
         JSONParser parser = new JSONParser();

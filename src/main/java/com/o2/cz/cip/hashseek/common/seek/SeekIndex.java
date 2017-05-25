@@ -14,15 +14,25 @@ import java.util.*;
 /**
  * Created by pavelnovotny on 07.03.14.
  */
-public class SeekIndex {
+public class SeekIndex implements Runnable {
     private static Logger LOGGER = Logger.getLogger(SeekIndex.class);
+
     private File dataFile;
     private File indexFile;
+    private String seekString;
     private ExtractData extractData;
     private Analyzer analyzer;
     private static final int REZERVA_SCORE = 3;
 
+    public void setNotifyListener(NotifyDocumentListener notifyListener) {
+        this.notifyListener = notifyListener;
+    }
+
+    private NotifyDocumentListener notifyListener;
     private byte[][] analyzed;
+    private List<Document> documents;
+
+    public SeekIndex() {}
 
     public SeekIndex(File indexFile, File dataFile, String dataStoreKind, String analyzerKind) throws FileNotFoundException {
         this.indexFile = indexFile;
@@ -46,6 +56,17 @@ public class SeekIndex {
             noDuplicity[i++] = word;
         }
         return noDuplicity;
+    }
+
+    public void setSeekParams(String seekString, File indexFile, File dataFile, String dataStoreKind, String analyzerKind) throws IOException {
+        this.indexFile = indexFile;
+        //todo lepší zjištění datového souboru (z indexu?)
+        this.dataFile = dataFile;
+        //todo možná vysunout a vytvářet instance mimo tuto třídu
+        this.extractData = ExtractDataFactory.createInstance(dataStoreKind);
+        this.extractData.setDataFile(this.dataFile);
+        this.analyzer = AnalyzerFactory.createInstance(analyzerKind);
+        this.seekString = seekString;
     }
 
     public List<Document> seek(String seekString) throws IOException {
@@ -172,5 +193,33 @@ public class SeekIndex {
         return analyzed;
     }
 
+    public File getDataFile() {
+        return dataFile;
+    }
+
+
+    @Override
+    public void run()  {
+        synchronized(this) {
+            while (true) {
+                try {
+                    this.wait();
+                    //Thread.sleep(300); //test zda to je skutečně paralelní
+                    this.documents = seek(this.seekString);
+                    this.notifyListener.notifyResult(this);
+                } catch (InterruptedException e) {
+                    //todo
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    //todo
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public List<Document> getResult() {
+        return documents;
+    }
 
 }
