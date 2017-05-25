@@ -1,10 +1,16 @@
 package com.o2.cz.cip.hashseek.o2seek.http;
 
+import com.o2.cz.cip.hashseek.o2seek.ConfigurationDto;
+import com.o2.cz.cip.hashseek.o2seek.O2Seek;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Properties;
@@ -16,8 +22,13 @@ import java.util.Properties;
 public class HttpServer {
     static final Logger LOGGER= LoggerFactory.getLogger(HttpServer.class);
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, ParseException {
 
+        JSONParser parser = new JSONParser();
+        //todo location of configuration file in startup parameters
+        JSONObject obj = (JSONObject) parser.parse(new FileReader("configuration.json"));
+        O2Seek.conf = new ConfigurationDto(obj);
+        //todo možná sjednotit s json konfigurací
         Properties properties = new Properties();
         loadPropertyFile(new File("./HttpServer.properties"), properties);
         int port = Integer.parseInt(properties.get("port").toString());

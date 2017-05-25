@@ -168,7 +168,7 @@ class SeekHandler implements HttpHandler, Runnable {
 		}
 	}
 
-    private void seek(JSONObject seekParam, Writer writer) throws IOException {
+    private void seek(JSONObject seekParam, Writer writer) throws IOException, ParseException, java.text.ParseException {
         O2Seek o2seek = new O2Seek();
         SeekParamsDto seekParamsDto = new SeekParamsDto(seekParam);
         o2seek.seek(seekParamsDto).writeJSONString(writer);

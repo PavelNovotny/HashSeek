@@ -62,14 +62,15 @@ public class HashSeekTest {
     }
 
     public void testNewSeek(String seekString, File seekedFile, File hashFile) throws IOException {
-        SeekIndex seekIndex = new SeekIndex(hashFile, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
+        SeekIndex seekIndex = new SeekIndex(hashFile, seekedFile, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer");
         List<Document> documents = seekIndex.seek(seekString); //pozice a délka
     }
 
     @Test
     public void testJSON() throws IOException {
         File file = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19.hash");
-        SeekIndex seekIndex = new SeekIndex(file, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer", 100);
+        File seekFile = new File("/Users/pavelnovotny/Downloads/transfer/e2e/jms_s1_alsb_aspect.audit.20170209.19");
+        SeekIndex seekIndex = new SeekIndex(file, seekFile, "PlainFileExtractData", "DefaultOldHashSeekAnalyzer");
         String seekString = "<mnp:BlMsisdnVefie xmlns:mnp=\"http://schemas.eurotel.cz/mnp\"><id>MNP:0000000000000000120734659</id><userId>MNP_Server</userId><transactionId>42</transactionId><spId>232</spId><msisdn><number>+42077349604</number></msisdn></mnp:BlMsisdnVerified>";
 
         seekIndex.seek(seekString);

@@ -24,11 +24,10 @@ public class SeekIndex {
 
     private byte[][] analyzed;
 
-    public SeekIndex(File indexFile, String dataStoreKind, String analyzerKind) throws FileNotFoundException {
+    public SeekIndex(File indexFile, File dataFile, String dataStoreKind, String analyzerKind) throws FileNotFoundException {
         this.indexFile = indexFile;
         //todo lepší zjištění datového souboru (z indexu?)
-        String indexFilePath = indexFile.getAbsolutePath();
-        this.dataFile = new File(indexFilePath.substring(0, indexFilePath.length()-5));
+        this.dataFile = dataFile;
         //todo možná vysunout a vytvářet instance mimo tuto třídu
         this.extractData = ExtractDataFactory.createInstance(dataStoreKind);
         this.extractData.setDataFile(this.dataFile);
