@@ -119,6 +119,7 @@ class SeekHandler implements HttpHandler, Runnable, NotifyJSONListener {
 	}
 
 	public static void main(String[] args) throws IOException {
+        //todo odstranit
 		ProcessBuilder pb = new ProcessBuilder("java");
 		Map<String, String> env = pb.environment();
 		pb.directory(new File("./"));
@@ -141,6 +142,7 @@ class SeekHandler implements HttpHandler, Runnable, NotifyJSONListener {
         this.result.put("fileResults",fileResults);
 		try {
 			BufferedInputStream httpBin = new BufferedInputStream(exchange.getRequestBody());
+            //todo asi zpracovat víc a popř. vrátit chybu
 			while (httpBin.available() > 0 && buf.length() < 4096) { //zpracujeme max 4KB
 				buf.append((char) httpBin.read());
 			}
@@ -208,6 +210,7 @@ class SeekHandler implements HttpHandler, Runnable, NotifyJSONListener {
     }
 
     private Object parseParams(StringBuffer buf) throws ParseException {
+        LOGGER.debug(buf.toString());
         JSONParser parser = new JSONParser();
         return parser.parse(buf.toString());
     }

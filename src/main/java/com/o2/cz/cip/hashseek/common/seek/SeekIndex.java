@@ -120,9 +120,11 @@ public class SeekIndex implements Runnable {
         List<Document> returnDoc = new ArrayList<Document>();
         if (documents.length > 0) {
             maxScore = documents[0].dataScore;
-            for (Document document : documents) {
-                if (document.dataScore == maxScore) { // filtrujeme pouze dokumenty s maximálním score
-                    returnDoc.add(document);
+            if (maxScore>0) {
+                for (Document document : documents) {
+                    if (document.dataScore == maxScore) { // filtrujeme pouze dokumenty s maximálním score
+                        returnDoc.add(document);
+                    }
                 }
             }
         }

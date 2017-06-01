@@ -27,6 +27,7 @@ public class O2Seek implements NotifyDocumentListener {
     public void seek(SeekParamsDto seekParams) throws IOException, java.text.ParseException {
         Set<SeekFile> seekFiles = seekFiles(seekParams);
         seekFilesCount = seekFiles.size();
+        //todo if no files found return to client
         for (SeekFile seekFile : seekFiles) {
             Thread thread = ThreadPool.getThread();
             SeekIndex seekIndex = ThreadPool.getSeekIndex(thread);
