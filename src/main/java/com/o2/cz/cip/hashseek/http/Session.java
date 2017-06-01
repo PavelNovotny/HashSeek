@@ -430,7 +430,7 @@ public class Session implements Comparable<Session> {
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
             env.put(Context.SECURITY_AUTHENTICATION, "simple");
             if (to2) {
-                env.put(Context.PROVIDER_URL, "ldap://10.21.136.10:389");
+                env.put(Context.PROVIDER_URL, "ldap://10.198.80.11:389");
                 env.put(Context.SECURITY_PRINCIPAL, String.format("to2\\%s", domainUser));
             } else {
                 env.put(Context.PROVIDER_URL, "ldap://172.23.168.6:3268");

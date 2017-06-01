@@ -258,7 +258,7 @@ public class SeekParameters implements Comparable<SeekParameters> {
 
             Hashtable<String, String> env = new Hashtable<String, String>();
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-            env.put(Context.PROVIDER_URL, "ldap://10.21.136.10:389");
+            env.put(Context.PROVIDER_URL, "ldap://10.198.80.11:389");
             env.put(Context.SECURITY_AUTHENTICATION, "simple");
             env.put(Context.SECURITY_PRINCIPAL, String.format("to2\\%s",domainUser));
             env.put(Context.SECURITY_CREDENTIALS, password);
