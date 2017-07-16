@@ -108,7 +108,9 @@ public class AuditBlockLogRecord extends AbstractBlockRecord {
                 if (logFile.getPath().contains("gf")) { //maintest
                     domain = domain + "m";
                 } else if (logFile.getPath().contains("e2e")) { //E2E
-                    domain = domain + "e";
+                    domain = domain + "e2";
+                } else if (logFile.getPath().contains("e3e")) {
+                    domain = domain + "e3";
                 } else if (logFile.getPath().contains("datamig")) {
                     domain = domain + "d";
                 }
