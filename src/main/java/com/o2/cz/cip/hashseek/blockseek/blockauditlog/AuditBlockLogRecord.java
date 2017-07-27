@@ -105,16 +105,20 @@ public class AuditBlockLogRecord extends AbstractBlockRecord {
             Matcher matcher = pattern.matcher(logFile.getName());
             if (matcher.find()) {
                 String domain = matcher.group().substring(0,1);
+                String server = matcher.group().substring(matcher.group().length()-1);
+                String env;
                 if (logFile.getPath().contains("gf")) { //maintest
-                    domain = domain + "m";
+                    env =  "m";
                 } else if (logFile.getPath().contains("e2e")) { //E2E
-                    domain = domain + "e2";
+                    env = "e2";
                 } else if (logFile.getPath().contains("e3e")) {
-                    domain = domain + "e3";
+                    env =  "e3";
                 } else if (logFile.getPath().contains("datamig")) {
-                    domain = domain + "d";
+                    env =  "d";
+                } else {
+                    env =  "";
                 }
-                this.markerPrefix = domain + matcher.group().substring(matcher.group().length()-1);
+                this.markerPrefix = domain + server + env;
             } else {
                 this.markerPrefix = "xx";
             }

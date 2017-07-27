@@ -104,7 +104,21 @@ public class B2BBlockLogRecord extends AbstractBlockRecord {
             Pattern pattern = Pattern.compile(".*_s\\d"); //other_s1, jms_s2, b2b, etc...
             Matcher matcher = pattern.matcher(logFile.getName());
             if (matcher.find()) {
-                this.markerPrefix = matcher.group().substring(0,1) + matcher.group().substring(matcher.group().length()-1);
+                String domain = matcher.group().substring(0,1);
+                String server = matcher.group().substring(matcher.group().length()-1);
+                String env;
+                if (logFile.getPath().contains("gf")) { //maintest
+                    env =  "m";
+                } else if (logFile.getPath().contains("e2e")) { //E2E
+                    env = "e2";
+                } else if (logFile.getPath().contains("e3e")) {
+                    env =  "e3";
+                } else if (logFile.getPath().contains("datamig")) {
+                    env =  "d";
+                } else {
+                    env =  "";
+                }
+                this.markerPrefix = domain + server + env;
             } else {
                 this.markerPrefix = "xx";
             }
