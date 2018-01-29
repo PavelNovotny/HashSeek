@@ -71,9 +71,14 @@ class HashSeekParams implements HttpHandler, Runnable {
             responseString = replaceFirstRegex("\"runinfo\"",String.format("\"runinfo\" %s", session.isRuninfo()? "checked":""), responseString);
             responseString = replaceFirstRegex("\"onlineconnectesb\"",String.format("\"onlineconnectesb\" %s", session.isOnlineEsbSeek()? "checked":""), responseString);
             responseString = replaceFirstRegex("\"b2bseek\"",String.format("\"b2bseek\" %s", session.isB2bSeek()? "checked":""), responseString);
-            responseString = replaceFirstRegex("\"onlineconnectbpm\"",String.format("\"onlineconnectbpm\" %s", session.isOnlineBPMSeek()? "checked":""), responseString);
             responseString = replaceFirstRegex("\"seekhashesonly\"",String.format("\"seekhashesonly\" %s", session.isHashFileSeekOnly()? "checked":""), responseString);
-            responseString = replaceFirstRegex("\"includetimelogs\"",String.format("\"includetimelogs\" %s", session.isIncludeTimeLogs()? "checked":""), responseString);
+            if (!session.isEligibleSeekProd()) {
+                responseString = replaceFirstRegex("Time logy<input type=\"checkbox\" name=\"includetimelogs\">", "", responseString);
+                responseString = replaceFirstRegex("BPM audit logy<input type=\"checkbox\" name=\"onlineconnectbpm\">", "", responseString);
+            } else {
+                responseString = replaceFirstRegex("\"onlineconnectbpm\"",String.format("\"onlineconnectbpm\" %s", session.isOnlineBPMSeek()? "checked":""), responseString);
+                responseString = replaceFirstRegex("\"includetimelogs\"",String.format("\"includetimelogs\" %s", session.isIncludeTimeLogs()? "checked":""), responseString);
+            }
             responseString = replaceFirstRegex("\"session\" value=\"[^\"]*\"",String.format("\"session\" value=\"%s\"", session.getSession()), responseString);
             responseString = replaceFirstRegex("processCommand", String.format("processCommand?%s", session.getSession()), responseString);
             responseString = replaceFirstRegex("name=\"defect\" value=\"[^\"]*\"", String.format("name=\"defect\" value=\"%s\"", session.getDefect()), responseString);
