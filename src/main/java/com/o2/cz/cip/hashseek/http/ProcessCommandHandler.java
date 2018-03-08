@@ -341,6 +341,7 @@ class ProcessCommandHandler implements HttpHandler, Runnable {
             for (LogRecordAuditLog logRecordAuditLog : remoteSeek.getResults()) {
                 remotelogRecords.add(logRecordAuditLog);
             }
+            raf.close();
         }
         HashSeekAuditLog hashSeekAuditLog = new HashSeekAuditLog();
         hashSeekAuditLog.setResults(remotelogRecords);
